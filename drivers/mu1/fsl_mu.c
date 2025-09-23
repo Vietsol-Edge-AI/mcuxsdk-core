@@ -1,5 +1,5 @@
 /*
- * Copyright 2021-2025 NXP
+ * Copyright 2021-2026 NXP
  *
  * SPDX-License-Identifier: BSD-3-Clause
  */
@@ -21,25 +21,29 @@
 /*******************************************************************************
  * Variables
  ******************************************************************************/
-#if !(defined(FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL) && FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL)
-#if (defined(MU_CLOCKS))
+#if (!(defined(FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL) && FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL)) && (defined(MU_CLOCKS))
 /*! brief Pointers to mu clocks for each instance. */
 static const clock_ip_name_t s_muClocks[] = MU_CLOCKS;
-#endif
-#endif /* FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL */
+#endif /* (!(defined(FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL) && FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL)) && \
+          (defined(MU_CLOCKS)) */
+
+#if (!(defined(FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL) && FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL)) && \
+    (defined(MU_CLOCKS)) || defined(MU_RESETS_ARRAY)
+/*! brief Pointers to mu bases for each instance. */
+static MU_Type *const s_muBases[] = MU_BASE_PTRS;
+#endif /* FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL || MU_RESETS_ARRAY */
 
 #if defined(MU_RESETS_ARRAY)
 /* Reset array */
 static const reset_ip_name_t s_muResets[] = MU_RESETS_ARRAY;
 #endif
 
-/*! brief Pointers to mu bases for each instance. */
-static MU_Type *const s_muBases[] = MU_BASE_PTRS;
-
 /******************************************************************************
  * Code
  *****************************************************************************/
-uint32_t MU_GetInstance(MU_Type *base)
+#if (!(defined(FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL) && FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL)) && \
+    (defined(MU_CLOCKS)) || defined(MU_RESETS_ARRAY)
+static uint32_t MU_GetInstance(MU_Type *base)
 {
     uint32_t instance;
 
@@ -56,6 +60,7 @@ uint32_t MU_GetInstance(MU_Type *base)
 
     return instance;
 }
+#endif /* FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL || MU_RESETS_ARRAY */
 
 /*!
  * brief Initializes the MU module.
@@ -66,14 +71,19 @@ uint32_t MU_GetInstance(MU_Type *base)
  */
 void MU_Init(MU_Type *base)
 {
+#if (!(defined(FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL) && FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL)) && \
+    (defined(MU_CLOCKS)) || defined(MU_RESETS_ARRAY)
+    uint32_t instance = MU_GetInstance(base);
+#endif /* FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL || MU_RESETS_ARRAY */
+
 #if !(defined(FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL) && FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL)
 #if (defined(MU_CLOCKS))
-    (void)CLOCK_EnableClock(s_muClocks[MU_GetInstance(base)]);
+    (void)CLOCK_EnableClock(s_muClocks[instance]);
 #endif
 #endif /* FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL */
 
 #if defined(MU_RESETS_ARRAY)
-    RESET_ReleasePeripheralReset(s_muResets[MU_GetInstance(base)]);
+    RESET_ReleasePeripheralReset(s_muResets[instance]);
 #endif
 }
 

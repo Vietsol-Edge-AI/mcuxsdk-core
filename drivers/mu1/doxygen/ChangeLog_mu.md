@@ -1,5 +1,11 @@
 # MU
 
+## [2.8.3]
+
+- Improvements
+  - Fix build failure when driver clock control disabled.
+  - Make MU_GetInstance() static function
+  
 ## [2.8.2]
 
 - Improvements

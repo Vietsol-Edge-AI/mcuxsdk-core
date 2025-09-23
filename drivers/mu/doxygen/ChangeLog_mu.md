@@ -1,5 +1,10 @@
 # MU
 
+## [2.3.3]
+
+- Improvements
+  - Fix build failure when driver clock control disabled.
+  
 ## [2.3.2]
 
 - Improvements
