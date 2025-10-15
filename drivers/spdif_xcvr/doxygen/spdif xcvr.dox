@@ -1,0 +1,44 @@
+
+
+/*!
+@defgroup spdif SPDIF: Sony/Philips Digital Interface
+@details The MCUXpresso SDK provides a peripheral driver for the Sony/Philips Digital Interface (SPDIF)
+         module of MCUXpresso SDK devices.
+
+
+SPDIF_XCVR driver includes functional APIs and transactional APIs.
+
+Functional APIs target low-level APIs.
+Functional APIs can be used for SPDIF_XCVR initialization/configuration/operation for
+optimization/customization purpose. Using the functional API requires the
+knowledge of the SPDIF_XCVR peripheral and how to organize functional APIs to
+meet the application requirements. All functional API use the peripheral base
+address as the first parameter. SPDIF_XCVR functional operation groups provide the
+functional API set.
+
+Transactional APIs target high-level APIs.
+Transactional APIs can be used to enable the peripheral and in the
+application if the code size and performance of transactional APIs satisfy the
+requirements. If the code size and performance are a critical requirement,
+see the transactional API implementation and write a custom code. All
+transactional APIs use the spdif_handle_t as the first parameter.
+Initialize the handle by calling the SPDIF_TransferTxCreateHandle() or SPDIF_TransferRxCreateHandle() API.
+
+Transactional APIs support asynchronous transfer. This means that the functions
+SPDIF_TransferSendNonBlocking() and SPDIF_TransferReceiveNonBlocking() set up the interrupt for data
+transfer. When the transfer completes, the upper layer is notified through a callback
+function with the kStatus_SPDIF_TxIdle and kStatus_SPDIF_RxIdle status.
+
+
+# Typical use case {#SPDIFCase}
+
+## SPDIF Send/receive using an interrupt method {#SPDIFCaseInterrupt}
+
+Refer to the driver examples codes located at \<SDK_ROOT\>/boards/\<BOARD\>/driver_examples/spdif
+## SPDIF Send/receive using a DMA method {#SPDIFCaseDma}
+
+Refer to the driver examples codes located at \<SDK_ROOT\>/boards/\<BOARD\>/driver_examples/spdif
+
+*/
+
+
