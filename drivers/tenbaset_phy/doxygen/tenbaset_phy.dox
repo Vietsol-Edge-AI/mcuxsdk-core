@@ -1,0 +1,133 @@
+/*!
+@defgroup tenbaset_phy TENBASET_PHY: 10BASE-T1S Digital PHY Driver
+@details The MCUXpresso SDK provides a peripheral driver for the 10BASE-T1S Digital PHY (TENBASET_PHY)
+         module of MCUXpresso SDK devices.
+
+# TENBASET_PHY: 10BASE-T1S Digital PHY Driver {#TENBASET_PHYDigitalPHYDriver}
+
+# Overview {#TENBASET_PHYOverview}
+
+The TENBASET_PHY driver provides a comprehensive interface for configuring and managing the 10BASE-T1S Digital PHY.
+It supports various operations including:
+- Physical Layer Collision Avoidance (PLCA) configuration
+- Mode control
+- Wake configuration
+- Interrupt management
+- Diagnostic and status reporting
+
+# Key Features {#TENBASET_PHYKeyFeatures}
+
+- PLCA (Physical Layer Collision Avoidance) support
+- Flexible mode transitions
+- Wake-up configuration
+- Serial Management Interface (SMI) access
+- Comprehensive diagnostic capabilities
+
+# Operations of TENBASET_PHY Digital PHY Driver {#TENBASET_PHYDriverOperations}
+
+## Initialization {#TENBASET_PHYInitialization}
+
+To use the TENBASET_PHY driver, follow these steps:
+1. Get default configuration using @ref TENBASET_PHY_GetDefaultConfig
+2. Modify configuration as needed
+3. Initialize handle with @ref TENBASET_PHY_CreateHandle
+4. Initialize the driver with @ref TENBASET_PHY_Init
+5. Optionally set up interrupt handling
+
+Example initialization flow:
+- Call TENBASET_PHY_GetDefaultConfig to obtain default settings
+- Modify PLCA configuration, wake settings, or interrupt mask
+- Allocate tenbaset_phy_handle_t structure and call TENBASET_PHY_CreateHandle to initialize it
+- Call TENBASET_PHY_Init with the configured parameters and handle pointer
+
+## PLCA Configuration {#TENBASET_PHYPLCAConfiguration}
+
+The driver supports detailed PLCA configuration:
+- Set node ID and total node count
+- Configure timers for transmission opportunities
+- Enable or disable PLCA
+
+Use @ref TENBASET_PHY_SetPLCAConfig to configure PLCA parameters
+Use @ref TENBASET_PHY_GetPLCAConfig to retrieve current configuration
+
+## Mode Control {#TENBASET_PHYModeControl}
+
+Supports various mode transitions:
+- Link Down
+- Link Up
+- Low Power
+- Transceiver Configuration
+- Built-In Self-Test (BIST)
+
+Use @ref TENBASET_PHY_SetMode to change operational modes
+Use @ref TENBASET_PHY_GetModeStatus to check current mode
+Use @ref TENBASET_PHY_IsLinkUp to quickly check link status
+
+## Wake Configuration {#TENBASET_PHYWakeConfiguration}
+
+Configurable wake-up features:
+- Remote and local wake events
+- Wake forwarding
+- Wake-up timeout configuration
+
+Use @ref TENBASET_PHY_SetWakeConfig to configure wake settings
+Use @ref TENBASET_PHY_TriggerWakeUp to initiate wake sequence
+Use @ref TENBASET_PHY_GetWakeUpStatus to check wake-up status
+
+## Interrupt Handling {#TENBASET_PHYInterruptHandling}
+
+- Configurable interrupt sources
+- Flexible interrupt enable/disable
+- Status retrieval and clearing
+
+Use @ref TENBASET_PHY_EnableInterrupts to set up interrupts
+Use @ref TENBASET_PHY_GetInterruptStatus to check interrupt sources
+Use @ref TENBASET_PHY_ClearInterruptStatus to manage interrupt flags
+
+## Diagnostic Capabilities {#TENBASET_PHYDiagnostics}
+
+Provides various diagnostic functions:
+- PLCA diagnostic flags
+- Transceiver diagnostic flags
+- Counters for beacons, collisions, and jabber events
+
+Use diagnostic functions like:
+- @ref TENBASET_PHY_GetPLCADiagnosticFlags
+- @ref TENBASET_PHY_GetTransceiverDiagnosticFlags
+- @ref TENBASET_PHY_GetBeaconCounter
+
+## SMI Interface {#TENBASET_PHYSMIInterface}
+
+Supports Serial Management Interface (SMI) operations:
+- Configuration of SMI parameters
+- Read/Write to PHY registers of external PMD transceiver device
+
+Use @ref TENBASET_PHY_SetMode to switch to transceiver configuration mode
+Use @ref TENBASET_PHY_SetSMIConfig to configure SMI
+Use @ref TENBASET_PHY_SMIRead and @ref TENBASET_PHY_SMIWrite for register access
+
+# Typical Use Cases {#TENBASET_PHYUseCases}
+
+## Basic Initialization and Link Establishment
+
+1. Get default configuration
+2. Modify PLCA and wake settings
+3. Initialize driver
+4. Set link up mode
+5. Check link status
+
+## Advanced PLCA Configuration
+
+1. Configure node parameters
+2. Set transmission opportunity timers
+3. Enable PLCA
+4. Initialize driver
+
+## Wake-up Sequence
+
+1. Configure wake settings
+2. Set up interrupts
+3. Trigger wake-up
+4. Monitor wake-up status
+
+*/

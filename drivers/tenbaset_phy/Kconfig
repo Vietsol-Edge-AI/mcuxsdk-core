@@ -1,0 +1,38 @@
+# Copyright 2025 NXP
+#
+# SPDX-License-Identifier: BSD-3-Clause
+
+config MCUX_HAS_COMPONENT_driver.tenbaset_phy
+    bool
+    default y if MCUX_HW_IP_DriverType_TENBASET_PHY
+
+config MCUX_COMPONENT_driver.tenbaset_phy
+    bool "tenbaset_phy"
+    select MCUX_COMPONENT_driver.common
+    depends on MCUX_HAS_COMPONENT_driver.tenbaset_phy
+
+if MCUX_COMPONENT_driver.tenbaset_phy
+
+    config TENBASET_PHY_MODE_TIMEOUT
+        int "TENBASET_PHY Mode Transition Timeout"
+        default 1000000
+        help
+          type unsigned
+          Timeout for TENBASET_PHY mode transitions in microseconds.
+
+    config TENBASET_PHY_RESET_TIMEOUT
+        int "TENBASET_PHY Reset Timeout"
+        default 100000
+        help
+          type unsigned
+          Timeout for TENBASET_PHY reset operation in microseconds.
+
+    config TENBASET_PHY_SMI_TIMEOUT
+        int "TENBASET_PHY SMI Ready Timeout"
+        default 1000
+        help
+          type unsigned
+          Timeout for TENBASET_PHY Serial Management Interface (SMI)
+          ready state in loop cycles.
+
+endif
