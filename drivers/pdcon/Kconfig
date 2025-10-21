@@ -1,0 +1,22 @@
+
+# Copyright 2025 NXP
+#
+# SPDX-License-Identifier: BSD-3-Clause
+
+config MCUX_HAS_COMPONENT_driver.pdcon
+    bool
+    default y if MCUX_HW_IP_DriverType_PDCON
+
+config MCUX_COMPONENT_driver.pdcon
+    bool "pdcon"
+    select MCUX_COMPONENT_driver.common
+    depends on MCUX_HAS_COMPONENT_driver.pdcon
+
+if MCUX_COMPONENT_driver.pdcon
+    config PDCON_BUSY_TIMEOUT
+        int "Max loops to wait for PDCON to stop being busy (0 means wait forever)"
+        default 0
+        help
+        The BUSY flag for specific power domain will be set when start any transition, will
+        auto cleared once transition finished.
+endif
