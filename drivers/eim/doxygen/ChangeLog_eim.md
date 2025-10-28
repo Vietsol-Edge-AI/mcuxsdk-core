@@ -1,10 +1,12 @@
 # EIM
 
-## [2.0.4]
+## [2.1.0]
 
+- New Features
+  - Enhanced EIM driver support for extended memory channels (16-30).
+  - Added new API EIM_InjectDataWordBitError() and EIM_GetDataWordBitMask() to support more data words (2-6).
 - Improvements
   - Change eim_memory_channel_t to uint32_t.
-  - Support channel number 16-23.
 
 ## [2.0.3]
 

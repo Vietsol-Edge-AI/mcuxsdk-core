@@ -41,9 +41,10 @@ static const reset_ip_name_t s_ermResets[] = ERM_RSTS_N;
 static uint32_t ERM_GetInstance(ERM_Type *base)
 {
     uint32_t instance;
+    uint32_t erm_cnt = ARRAY_SIZE(s_ermBases);
 
     /* Find the instance index from base address mappings. */
-    for (instance = 0; instance < ARRAY_SIZE(s_ermBases); instance++)
+    for (instance = 0; instance < erm_cnt; instance++)
     {
         if (MSDK_REG_SECURE_ADDR(s_ermBases[instance]) == MSDK_REG_SECURE_ADDR(base))
         {
@@ -51,7 +52,7 @@ static uint32_t ERM_GetInstance(ERM_Type *base)
         }
     }
 
-    assert(instance < ARRAY_SIZE(s_ermBases));
+    assert(instance < erm_cnt);
 
     return instance;
 }
@@ -65,7 +66,7 @@ void ERM_Init(ERM_Type *base)
 {
 #if !(defined(FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL) && FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL)
     /* Ungate ERM clock. */
-    CLOCK_EnableClock(s_ermClocks[ERM_GetInstance(base)]);
+    (void)CLOCK_EnableClock(s_ermClocks[ERM_GetInstance(base)]);
 #endif /* FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL */
 
 #if defined(ERM_RSTS_N)
@@ -97,7 +98,7 @@ void ERM_Deinit(ERM_Type *base)
 {
 #if !(defined(FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL) && FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL)
     /* Ungate ERM clock. */
-    CLOCK_DisableClock(s_ermClocks[ERM_GetInstance(base)]);
+    (void)CLOCK_DisableClock(s_ermClocks[ERM_GetInstance(base)]);
 #endif /* FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL */
 }
 
@@ -233,6 +234,7 @@ uint32_t ERM_GetMemoryErrorAddr(ERM_Type *base, uint32_t channel)
     return absoluteErrorAddress;
 }
 
+#if defined(ERM_SYN0_SYNDROME_MASK) && ERM_SYN0_SYNDROME_MASK
 uint32_t ERM_GetSyndrome(ERM_Type *base, uint32_t channel)
 {
     uint32_t syndrome = 0x00U;
@@ -364,7 +366,9 @@ uint32_t ERM_GetSyndrome(ERM_Type *base, uint32_t channel)
 
     return syndrome;
 }
+#endif /* ERM_SYN0_SYNDROME_MASK */
 
+#if defined(ERM_CORR_ERR_CNT0_COUNT_MASK) && ERM_CORR_ERR_CNT0_COUNT_MASK
 uint32_t ERM_GetErrorCount(ERM_Type *base, uint32_t channel)
 {
     uint32_t count = 0x00U;
@@ -625,3 +629,4 @@ void ERM_ResetErrorCount(ERM_Type *base, uint32_t channel)
             break;
     }
 }
+#endif /* ERM_CORR_ERR_CNT1_COUNT_MASK */

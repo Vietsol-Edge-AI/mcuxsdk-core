@@ -100,14 +100,14 @@ static inline void ERM_EnableInterrupts(ERM_Type *base, uint32_t channel, uint32
         base->CR0 = (temp & ~(0x0CUL << ((0x07U - channel) * 4U))) | (mask << ((0x07U - channel) * 4U));
     }
 #ifdef ERM_CR1_ESCIE8_MASK
-    else if (channel > 0x07U && channel <= 0xFU)
+    else if (channel <= 0xFU)
     {
         temp      = base->CR1;
         base->CR1 = (temp & ~(0x0CUL << ((0x07U + 0x08U - channel) * 4U))) | (mask << ((0x07U + 0x08U - channel) * 4U));
     }
 #endif
 #ifdef ERM_CR2_ESCIE16_MASK
-    else if (channel > 0x0FU && channel <= 0x17U)
+    else if (channel <= 0x17U)
     {
         temp      = base->CR2;
         base->CR2 = (temp & ~(0x0CUL << ((0x07U + 0x10U - channel) * 4U))) | (mask << ((0x07U + 0x10U - channel) * 4U));
@@ -134,13 +134,13 @@ static inline void ERM_DisableInterrupts(ERM_Type *base, uint32_t channel, uint3
         base->CR0 &= ~(mask << ((0x07U - channel) * 4U));
     }
 #ifdef ERM_CR1_ESCIE8_MASK
-    else if (channel > 0x07U && channel <= 0x0FU)
+    else if (channel <= 0x0FU)
     {
         base->CR1 &= ~(mask << ((0x07U + 0x08U - channel) * 4U));
     }
 #endif
 #ifdef ERM_CR2_ESCIE16_MASK
-    else if (channel > 0x0FU && channel <= 0x17U)
+    else if (channel <= 0x17U)
     {
         base->CR2 &= ~(mask << ((0x07U + 0x10U - channel) * 4U));
     }
@@ -164,13 +164,13 @@ static inline uint32_t ERM_GetInterruptStatus(ERM_Type *base, uint32_t channel)
         return ((base->SR0 & (uint32_t)kERM_AllIntsFlag) >> (0x07U - channel) * 4U) & 0xFU;
     }
 #ifdef ERM_SR1_SBC8_MASK
-    else if (channel > 0x07U && channel <= 0x0FU)
+    else if (channel <= 0x0FU)
     {
         return ((base->SR1 & (uint32_t)kERM_AllIntsFlag) >> ((0x07U + 0x08U - channel) * 4U)) & 0xFU;
     }
 #endif
 #ifdef ERM_SR2_SBC16_MASK
-    else if (channel > 0x0FU && channel <= 0x17U)
+    else if (channel <= 0x17U)
     {
         return ((base->SR2 & (uint32_t)kERM_AllIntsFlag) >> ((0x07U + 0x10U - channel) * 4U)) & 0xFU;
     }
@@ -194,17 +194,21 @@ static inline void ERM_ClearInterruptStatus(ERM_Type *base, uint32_t channel, ui
         base->SR0 = mask << ((0x07U - channel) * 4U);
     }
 #ifdef ERM_SR1_SBC8_MASK
-    else if (channel > 0x07U && channel <= 0x0FU)
+    else if (channel <= 0x0FU)
     {
         base->SR1 = mask << ((0x07U + 0x08U - channel) * 4U);
     }
 #endif
 #ifdef ERM_SR2_SBC16_MASK
-    else if (channel > 0x0FU && channel <= 0x17U)
+    else if (channel <= 0x17U)
     {
         base->SR2 = mask << ((0x07U + 0x10U - channel) * 4U);
     }
 #endif
+    else
+    {
+        assert(false);
+    }
 }
 
 /*! @} */
@@ -224,6 +228,7 @@ static inline void ERM_ClearInterruptStatus(ERM_Type *base, uint32_t channel, ui
 
 uint32_t ERM_GetMemoryErrorAddr(ERM_Type *base, uint32_t channel);
 
+#if defined(ERM_SYN0_SYNDROME_MASK) && ERM_SYN0_SYNDROME_MASK
 /*!
  * @brief ERM get syndrome, which identifies the pertinent bit position on a correctable, single-bit data inversion or a
  * non-correctable, single-bit address inversion. The syndrome value does not provide any additional diagnostic
@@ -234,7 +239,9 @@ uint32_t ERM_GetMemoryErrorAddr(ERM_Type *base, uint32_t channel);
  * @retval syndrome value.
  */
 uint32_t ERM_GetSyndrome(ERM_Type *base, uint32_t channel);
+#endif /* ERM_SYN0_SYNDROME_MASK */
 
+#if defined(ERM_CORR_ERR_CNT0_COUNT_MASK) && ERM_CORR_ERR_CNT0_COUNT_MASK
 /*!
  * @brief ERM get error count, which  records the count value of the number of correctable ECC error events for Memory
  * n. Non-correctable errors are considered a serious fault, so the ERM does not provide any mechanism to count
@@ -253,6 +260,7 @@ uint32_t ERM_GetErrorCount(ERM_Type *base, uint32_t channel);
  * @param channel memory channel.
  */
 void ERM_ResetErrorCount(ERM_Type *base, uint32_t channel);
+#endif /* ERM_CORR_ERR_CNT0_COUNT_MASK */
 
 /*! @}*/
 

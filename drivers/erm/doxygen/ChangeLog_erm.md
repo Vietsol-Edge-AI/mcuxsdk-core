@@ -2,9 +2,10 @@
 
 ## [2.0.4]
 
+- New Features
+  - Enhanced ERM driver support for extended memory channels (16-30).
 - Improvements
   - Change erm_memory_channel_t to uint32_t.
-  - Support channel number 16-23.
 
 ## [2.0.3]
 

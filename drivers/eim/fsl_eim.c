@@ -41,9 +41,10 @@ static const reset_ip_name_t s_eimResets[] = EIM_RSTS_N;
 static uint32_t EIM_GetInstance(EIM_Type *base)
 {
     uint32_t instance;
+    uint32_t eim_cnt = ARRAY_SIZE(s_eimBases);
 
     /* Find the instance index from base address mappings. */
-    for (instance = 0; instance < ARRAY_SIZE(s_eimBases); instance++)
+    for (instance = 0; instance < eim_cnt; instance++)
     {
         if (MSDK_REG_SECURE_ADDR(s_eimBases[instance]) == MSDK_REG_SECURE_ADDR(base))
         {
@@ -51,7 +52,7 @@ static uint32_t EIM_GetInstance(EIM_Type *base)
         }
     }
 
-    assert(instance < ARRAY_SIZE(s_eimBases));
+    assert(instance < eim_cnt);
 
     return instance;
 }
@@ -65,7 +66,7 @@ void EIM_Init(EIM_Type *base)
 {
 #if !(defined(FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL) && FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL)
     /* Ungate EIM clock. */
-    CLOCK_EnableClock(s_eimClocks[EIM_GetInstance(base)]);
+    (void)CLOCK_EnableClock(s_eimClocks[EIM_GetInstance(base)]);
 #endif /* FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL */
 #if defined(EIM_RSTS_N)
     /* Reset the EIM module */
@@ -83,7 +84,7 @@ void EIM_Deinit(EIM_Type *base)
 {
 #if !(defined(FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL) && FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL)
     /* Ungate EIM clock. */
-    CLOCK_DisableClock(s_eimClocks[EIM_GetInstance(base)]);
+    (void)CLOCK_DisableClock(s_eimClocks[EIM_GetInstance(base)]);
 #endif /* FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL */
 }
 
@@ -318,160 +319,121 @@ uint32_t EIM_GetCheckBitMask(EIM_Type *base, uint32_t channel)
 
 void EIM_InjectDataBitError(EIM_Type *base, uint32_t channel, uint32_t mask)
 {
+    EIM_InjectDataWordBitError(base, channel, mask, 1U);
+}
+
+uint32_t EIM_GetDataBitMask(EIM_Type *base, uint32_t channel)
+{
+    return EIM_GetDataWordBitMask(base, channel, 1U);
+}
+
+/* EIM channel may have 8 words, currently the maximum support is 6. */
+#define INJECT_CHANNEL(ch) \
+    switch(word) { \
+        SET_##ch##_1 \
+        SET_##ch##_2 \
+        SET_##ch##_3 \
+        SET_##ch##_4 \
+        SET_##ch##_5 \
+        SET_##ch##_6 \
+        default: assert(false); break; \
+    } \
+    break;
+
+void EIM_InjectDataWordBitError(EIM_Type *base, uint32_t channel, uint32_t mask, uint32_t word)
+{
     switch (channel)
     {
-        case 0U:
-            base->EICHD0_WORD1 = EIM_EICHD0_WORD1_B0_3DATA_MASK(mask);
-            break;
+        case(0): { INJECT_CHANNEL(0) }
 #ifdef EIM_EICHD1_WORD1_B0_3DATA_MASK_MASK
-        case 1U:
-            base->EICHD1_WORD1 = EIM_EICHD1_WORD1_B0_3DATA_MASK(mask);
-            break;
+        case(1): { INJECT_CHANNEL(1) }
 #endif
 #ifdef EIM_EICHD2_WORD1_B0_3DATA_MASK_MASK
-        case 2U:
-            base->EICHD2_WORD1 = EIM_EICHD2_WORD1_B0_3DATA_MASK(mask);
-            break;
+        case(2): { INJECT_CHANNEL(2) }
 #endif
 #ifdef EIM_EICHD3_WORD1_B0_3DATA_MASK_MASK
-        case 3U:
-            base->EICHD3_WORD1 = EIM_EICHD3_WORD1_B0_3DATA_MASK(mask);
-            break;
+        case(3): { INJECT_CHANNEL(3) }
 #endif
 #ifdef EIM_EICHD4_WORD1_B0_3DATA_MASK_MASK
-        case 4U:
-            base->EICHD4_WORD1 = EIM_EICHD4_WORD1_B0_3DATA_MASK(mask);
-            break;
+        case(4): { INJECT_CHANNEL(4) }
 #endif
 #ifdef EIM_EICHD5_WORD1_B0_3DATA_MASK_MASK
-        case 5U:
-            base->EICHD5_WORD1 = EIM_EICHD5_WORD1_B0_3DATA_MASK(mask);
-            break;
+        case(5): { INJECT_CHANNEL(5) }
 #endif
 #ifdef EIM_EICHD6_WORD1_B0_3DATA_MASK_MASK
-        case 6U:
-            base->EICHD6_WORD1 = EIM_EICHD6_WORD1_B0_3DATA_MASK(mask);
-            break;
+        case(6): { INJECT_CHANNEL(6) }
 #endif
 #ifdef EIM_EICHD7_WORD1_B0_3DATA_MASK_MASK
-        case 7U:
-            base->EICHD7_WORD1 = EIM_EICHD7_WORD1_B0_3DATA_MASK(mask);
-            break;
+        case(7): { INJECT_CHANNEL(7) }
 #endif
 #ifdef EIM_EICHD8_WORD1_B0_3DATA_MASK_MASK
-        case 8U:
-            base->EICHD8_WORD1 = EIM_EICHD8_WORD1_B0_3DATA_MASK(mask);
-            break;
+        case(8): { INJECT_CHANNEL(8) }
 #endif
 #ifdef EIM_EICHD9_WORD1_B0_3DATA_MASK_MASK
-        case 9U:
-            base->EICHD9_WORD1 = EIM_EICHD9_WORD1_B0_3DATA_MASK(mask);
-            break;
+        case(9): { INJECT_CHANNEL(9) }
 #endif
 #ifdef EIM_EICHD10_WORD1_B0_3DATA_MASK_MASK
-        case 10U:
-            base->EICHD10_WORD1 = EIM_EICHD10_WORD1_B0_3DATA_MASK(mask);
-            break;
+        case(10): { INJECT_CHANNEL(10) }
 #endif
 #ifdef EIM_EICHD11_WORD1_B0_3DATA_MASK_MASK
-        case 11U:
-            base->EICHD11_WORD1 = EIM_EICHD11_WORD1_B0_3DATA_MASK(mask);
-            break;
+        case(11): { INJECT_CHANNEL(11) }
 #endif
 #ifdef EIM_EICHD12_WORD1_B0_3DATA_MASK_MASK
-        case 12U:
-            base->EICHD12_WORD1 = EIM_EICHD12_WORD1_B0_3DATA_MASK(mask);
-            break;
+        case(12): { INJECT_CHANNEL(12) }
 #endif
 #ifdef EIM_EICHD13_WORD1_B0_3DATA_MASK_MASK
-        case 13U:
-            base->EICHD13_WORD1 = EIM_EICHD13_WORD1_B0_3DATA_MASK(mask);
-            break;
+        case(13): { INJECT_CHANNEL(13) }
 #endif
 #ifdef EIM_EICHD14_WORD1_B0_3DATA_MASK_MASK
-        case 14U:
-            base->EICHD14_WORD1 = EIM_EICHD14_WORD1_B0_3DATA_MASK(mask);
-            break;
+        case(14): { INJECT_CHANNEL(14) }
 #endif
 #ifdef EIM_EICHD15_WORD1_B0_3DATA_MASK_MASK
-        case 15U:
-            base->EICHD15_WORD1 = EIM_EICHD15_WORD1_B0_3DATA_MASK(mask);
-            break;
+        case(15): { INJECT_CHANNEL(15) }
 #endif
 #ifdef EIM_EICHD16_WORD1_B0_3DATA_MASK_MASK
-        case 16U:
-            base->EICHD16_WORD1 = EIM_EICHD16_WORD1_B0_3DATA_MASK(mask);
-            break;
+        case(16): { INJECT_CHANNEL(16) }
 #endif
 #ifdef EIM_EICHD17_WORD1_B0_3DATA_MASK_MASK
-        case 17U:
-            base->EICHD17_WORD1 = EIM_EICHD17_WORD1_B0_3DATA_MASK(mask);
-            break;
+        case(17): { INJECT_CHANNEL(17) }
 #endif
 #ifdef EIM_EICHD18_WORD1_B0_3DATA_MASK_MASK
-        case 18U:
-            base->EICHD18_WORD1 = EIM_EICHD18_WORD1_B0_3DATA_MASK(mask);
-            break;
+        case(18): { INJECT_CHANNEL(18) }
 #endif
 #ifdef EIM_EICHD19_WORD1_B0_3DATA_MASK_MASK
-        case 19U:
-            base->EICHD19_WORD1 = EIM_EICHD19_WORD1_B0_3DATA_MASK(mask);
-            break;
+        case(19): { INJECT_CHANNEL(19) }
 #endif
 #ifdef EIM_EICHD20_WORD1_B0_3DATA_MASK_MASK
-        case 20U:
-            base->EICHD20_WORD1 = EIM_EICHD20_WORD1_B0_3DATA_MASK(mask);
-            break;
+        case(20): { INJECT_CHANNEL(20) }
 #endif
 #ifdef EIM_EICHD21_WORD1_B0_3DATA_MASK_MASK
-        case 21U:
-            base->EICHD21_WORD1 = EIM_EICHD21_WORD1_B0_3DATA_MASK(mask);
-            break;
+        case(21): { INJECT_CHANNEL(21) }
 #endif
 #ifdef EIM_EICHD22_WORD1_B0_3DATA_MASK_MASK
-        case 22U:
-            base->EICHD22_WORD1 = EIM_EICHD22_WORD1_B0_3DATA_MASK(mask);
-            break;
+        case(22): { INJECT_CHANNEL(22) }
 #endif
 #ifdef EIM_EICHD23_WORD1_B0_3DATA_MASK_MASK
-        case 23U:
-            base->EICHD23_WORD1 = EIM_EICHD23_WORD1_B0_3DATA_MASK(mask);
-            break;
+        case(23): { INJECT_CHANNEL(23) }
 #endif
 #ifdef EIM_EICHD24_WORD1_B0_3DATA_MASK_MASK
-        case 24U:
-            base->EICHD24_WORD1 = EIM_EICHD24_WORD1_B0_3DATA_MASK(mask);
-            break;
+        case(24): { INJECT_CHANNEL(24) }
 #endif
 #ifdef EIM_EICHD25_WORD1_B0_3DATA_MASK_MASK
-        case 25U:
-            base->EICHD25_WORD1 = EIM_EICHD25_WORD1_B0_3DATA_MASK(mask);
-            break;
+        case(25): { INJECT_CHANNEL(25) }
 #endif
 #ifdef EIM_EICHD26_WORD1_B0_3DATA_MASK_MASK
-        case 26U:
-            base->EICHD26_WORD1 = EIM_EICHD26_WORD1_B0_3DATA_MASK(mask);
-            break;
+        case(26): { INJECT_CHANNEL(26) }
 #endif
 #ifdef EIM_EICHD27_WORD1_B0_3DATA_MASK_MASK
-        case 27U:
-            base->EICHD27_WORD1 = EIM_EICHD27_WORD1_B0_3DATA_MASK(mask);
-            break;
+        case(27): { INJECT_CHANNEL(27) }
 #endif
 #ifdef EIM_EICHD28_WORD1_B0_3DATA_MASK_MASK
-        case 28U:
-            base->EICHD28_WORD1 = EIM_EICHD28_WORD1_B0_3DATA_MASK(mask);
-            break;
+        case(28): { INJECT_CHANNEL(28) }
 #endif
 #ifdef EIM_EICHD29_WORD1_B0_3DATA_MASK_MASK
-        case 29U:
-            base->EICHD29_WORD1 = EIM_EICHD29_WORD1_B0_3DATA_MASK(mask);
-            break;
+        case(29): { INJECT_CHANNEL(29) }
 #endif
 #ifdef EIM_EICHD30_WORD1_B0_3DATA_MASK_MASK
-        case 30U:
-            base->EICHD30_WORD1 = EIM_EICHD30_WORD1_B0_3DATA_MASK(mask);
-            break;
+        case(30): { INJECT_CHANNEL(30) }
 #endif
         default:
             assert(false);
@@ -479,185 +441,115 @@ void EIM_InjectDataBitError(EIM_Type *base, uint32_t channel, uint32_t mask)
     }
 }
 
-uint32_t EIM_GetDataBitMask(EIM_Type *base, uint32_t channel)
+
+#define GET_CHANNEL(ch) \
+    switch(word) { \
+        GET_##ch##_1 \
+        GET_##ch##_2 \
+        GET_##ch##_3 \
+        GET_##ch##_4 \
+        GET_##ch##_5 \
+        GET_##ch##_6 \
+        default: assert(false); break; \
+    } \
+    break;
+
+uint32_t EIM_GetDataWordBitMask(EIM_Type *base, uint32_t channel, uint32_t word)
 {
     uint32_t mask = 0x00U;
 
     switch (channel)
     {
-        case 0U:
-            mask = (base->EICHD0_WORD1 & EIM_EICHD0_WORD1_B0_3DATA_MASK_MASK) >> EIM_EICHD0_WORD1_B0_3DATA_MASK_SHIFT;
-            break;
+        case(0): { GET_CHANNEL(0) }
 #ifdef EIM_EICHD1_WORD1_B0_3DATA_MASK_MASK
-        case 1U:
-            mask = (base->EICHD1_WORD1 & EIM_EICHD1_WORD1_B0_3DATA_MASK_MASK) >> EIM_EICHD1_WORD1_B0_3DATA_MASK_SHIFT;
-            break;
+        case(1): { GET_CHANNEL(1) }
 #endif
 #ifdef EIM_EICHD2_WORD1_B0_3DATA_MASK_MASK
-        case 2U:
-            mask = (base->EICHD2_WORD1 & EIM_EICHD2_WORD1_B0_3DATA_MASK_MASK) >> EIM_EICHD2_WORD1_B0_3DATA_MASK_SHIFT;
-            break;
+        case(2): { GET_CHANNEL(2) }
 #endif
 #ifdef EIM_EICHD3_WORD1_B0_3DATA_MASK_MASK
-        case 3U:
-            mask = (base->EICHD3_WORD1 & EIM_EICHD3_WORD1_B0_3DATA_MASK_MASK) >> EIM_EICHD3_WORD1_B0_3DATA_MASK_SHIFT;
-            break;
+        case(3): { GET_CHANNEL(3) }
 #endif
 #ifdef EIM_EICHD4_WORD1_B0_3DATA_MASK_MASK
-        case 4U:
-            mask = (base->EICHD4_WORD1 & EIM_EICHD4_WORD1_B0_3DATA_MASK_MASK) >> EIM_EICHD4_WORD1_B0_3DATA_MASK_SHIFT;
-            break;
+        case(4): { GET_CHANNEL(4) }
 #endif
 #ifdef EIM_EICHD5_WORD1_B0_3DATA_MASK_MASK
-        case 5U:
-            mask = (base->EICHD5_WORD1 & EIM_EICHD5_WORD1_B0_3DATA_MASK_MASK) >> EIM_EICHD5_WORD1_B0_3DATA_MASK_SHIFT;
-            break;
+        case(5): { GET_CHANNEL(5) }
 #endif
 #ifdef EIM_EICHD6_WORD1_B0_3DATA_MASK_MASK
-        case 6U:
-            mask = (base->EICHD6_WORD1 & EIM_EICHD6_WORD1_B0_3DATA_MASK_MASK) >> EIM_EICHD6_WORD1_B0_3DATA_MASK_SHIFT;
-            break;
+        case(6): { GET_CHANNEL(6) }
 #endif
 #ifdef EIM_EICHD7_WORD1_B0_3DATA_MASK_MASK
-        case 7U:
-            mask = (base->EICHD7_WORD1 & EIM_EICHD7_WORD1_B0_3DATA_MASK_MASK) >> EIM_EICHD7_WORD1_B0_3DATA_MASK_SHIFT;
-            break;
+        case(7): { GET_CHANNEL(7) }
 #endif
 #ifdef EIM_EICHD8_WORD1_B0_3DATA_MASK_MASK
-        case 8U:
-            mask = (base->EICHD8_WORD1 & EIM_EICHD8_WORD1_B0_3DATA_MASK_MASK) >> EIM_EICHD8_WORD1_B0_3DATA_MASK_SHIFT;
-            break;
+        case(8): { GET_CHANNEL(8) }
 #endif
 #ifdef EIM_EICHD9_WORD1_B0_3DATA_MASK_MASK
-        case 9U:
-            mask = (base->EICHD9_WORD1 & EIM_EICHD9_WORD1_B0_3DATA_MASK_MASK) >> EIM_EICHD9_WORD1_B0_3DATA_MASK_SHIFT;
-            break;
+        case(9): { GET_CHANNEL(9) }
 #endif
 #ifdef EIM_EICHD10_WORD1_B0_3DATA_MASK_MASK
-        case 10U:
-            mask =
-                (base->EICHD10_WORD1 & EIM_EICHD10_WORD1_B0_3DATA_MASK_MASK) >> EIM_EICHD10_WORD1_B0_3DATA_MASK_SHIFT;
-            break;
+        case(10): { GET_CHANNEL(10) }
 #endif
 #ifdef EIM_EICHD11_WORD1_B0_3DATA_MASK_MASK
-        case 11U:
-            mask =
-                (base->EICHD11_WORD1 & EIM_EICHD11_WORD1_B0_3DATA_MASK_MASK) >> EIM_EICHD11_WORD1_B0_3DATA_MASK_SHIFT;
-            break;
+        case(11): { GET_CHANNEL(11) }
 #endif
 #ifdef EIM_EICHD12_WORD1_B0_3DATA_MASK_MASK
-        case 12U:
-            mask =
-                (base->EICHD12_WORD1 & EIM_EICHD12_WORD1_B0_3DATA_MASK_MASK) >> EIM_EICHD12_WORD1_B0_3DATA_MASK_SHIFT;
-            break;
+        case(12): { GET_CHANNEL(12) }
 #endif
 #ifdef EIM_EICHD13_WORD1_B0_3DATA_MASK_MASK
-        case 13U:
-            mask =
-                (base->EICHD13_WORD1 & EIM_EICHD13_WORD1_B0_3DATA_MASK_MASK) >> EIM_EICHD13_WORD1_B0_3DATA_MASK_SHIFT;
-            break;
+        case(13): { GET_CHANNEL(13) }
 #endif
 #ifdef EIM_EICHD14_WORD1_B0_3DATA_MASK_MASK
-        case 14U:
-            mask =
-                (base->EICHD14_WORD1 & EIM_EICHD14_WORD1_B0_3DATA_MASK_MASK) >> EIM_EICHD14_WORD1_B0_3DATA_MASK_SHIFT;
-            break;
+        case(14): { GET_CHANNEL(14) }
 #endif
 #ifdef EIM_EICHD15_WORD1_B0_3DATA_MASK_MASK
-        case 15U:
-            mask =
-                (base->EICHD15_WORD1 & EIM_EICHD15_WORD1_B0_3DATA_MASK_MASK) >> EIM_EICHD15_WORD1_B0_3DATA_MASK_SHIFT;
-            break;
+        case(15): { GET_CHANNEL(15) }
 #endif
 #ifdef EIM_EICHD16_WORD1_B0_3DATA_MASK_MASK
-        case 16U:
-            mask =
-                (base->EICHD16_WORD1 & EIM_EICHD16_WORD1_B0_3DATA_MASK_MASK) >> EIM_EICHD16_WORD1_B0_3DATA_MASK_SHIFT;
-            break;
+        case(16): { GET_CHANNEL(16) }
 #endif
 #ifdef EIM_EICHD17_WORD1_B0_3DATA_MASK_MASK
-        case 17U:
-            mask =
-                (base->EICHD17_WORD1 & EIM_EICHD17_WORD1_B0_3DATA_MASK_MASK) >> EIM_EICHD17_WORD1_B0_3DATA_MASK_SHIFT;
-            break;
+        case(17): { GET_CHANNEL(17) }
 #endif
 #ifdef EIM_EICHD18_WORD1_B0_3DATA_MASK_MASK
-        case 18U:
-            mask =
-                (base->EICHD18_WORD1 & EIM_EICHD18_WORD1_B0_3DATA_MASK_MASK) >> EIM_EICHD18_WORD1_B0_3DATA_MASK_SHIFT;
-            break;
+        case(18): { GET_CHANNEL(18) }
 #endif
 #ifdef EIM_EICHD19_WORD1_B0_3DATA_MASK_MASK
-        case 19U:
-            mask =
-                (base->EICHD19_WORD1 & EIM_EICHD19_WORD1_B0_3DATA_MASK_MASK) >> EIM_EICHD19_WORD1_B0_3DATA_MASK_SHIFT;
-            break;
+        case(19): { GET_CHANNEL(19) }
 #endif
 #ifdef EIM_EICHD20_WORD1_B0_3DATA_MASK_MASK
-        case 20U:
-            mask =
-                (base->EICHD20_WORD1 & EIM_EICHD20_WORD1_B0_3DATA_MASK_MASK) >> EIM_EICHD20_WORD1_B0_3DATA_MASK_SHIFT;
-            break;
+        case(20): { GET_CHANNEL(20) }
 #endif
 #ifdef EIM_EICHD21_WORD1_B0_3DATA_MASK_MASK
-        case 21U:
-            mask =
-                (base->EICHD21_WORD1 & EIM_EICHD21_WORD1_B0_3DATA_MASK_MASK) >> EIM_EICHD21_WORD1_B0_3DATA_MASK_SHIFT;
-            break;
+        case(21): { GET_CHANNEL(21) }
 #endif
 #ifdef EIM_EICHD22_WORD1_B0_3DATA_MASK_MASK
-        case 22U:
-            mask =
-                (base->EICHD22_WORD1 & EIM_EICHD22_WORD1_B0_3DATA_MASK_MASK) >> EIM_EICHD22_WORD1_B0_3DATA_MASK_SHIFT;
-            break;
+        case(22): { GET_CHANNEL(22) }
 #endif
 #ifdef EIM_EICHD23_WORD1_B0_3DATA_MASK_MASK
-        case 23U:
-            mask =
-                (base->EICHD23_WORD1 & EIM_EICHD23_WORD1_B0_3DATA_MASK_MASK) >> EIM_EICHD23_WORD1_B0_3DATA_MASK_SHIFT;
-            break;
+        case(23): { GET_CHANNEL(23) }
 #endif
 #ifdef EIM_EICHD24_WORD1_B0_3DATA_MASK_MASK
-        case 24U:
-            mask =
-                (base->EICHD24_WORD1 & EIM_EICHD24_WORD1_B0_3DATA_MASK_MASK) >> EIM_EICHD24_WORD1_B0_3DATA_MASK_SHIFT;
-            break;
+        case(24): { GET_CHANNEL(24) }
 #endif
 #ifdef EIM_EICHD25_WORD1_B0_3DATA_MASK_MASK
-        case 25U:
-            mask =
-                (base->EICHD25_WORD1 & EIM_EICHD25_WORD1_B0_3DATA_MASK_MASK) >> EIM_EICHD25_WORD1_B0_3DATA_MASK_SHIFT;
-            break;
+        case(25): { GET_CHANNEL(25) }
 #endif
 #ifdef EIM_EICHD26_WORD1_B0_3DATA_MASK_MASK
-        case 26U:
-            mask =
-                (base->EICHD26_WORD1 & EIM_EICHD26_WORD1_B0_3DATA_MASK_MASK) >> EIM_EICHD26_WORD1_B0_3DATA_MASK_SHIFT;
-            break;
+        case(26): { GET_CHANNEL(26) }
 #endif
 #ifdef EIM_EICHD27_WORD1_B0_3DATA_MASK_MASK
-        case 27U:
-            mask =
-                (base->EICHD27_WORD1 & EIM_EICHD27_WORD1_B0_3DATA_MASK_MASK) >> EIM_EICHD27_WORD1_B0_3DATA_MASK_SHIFT;
-            break;
+        case(27): { GET_CHANNEL(27) }
 #endif
 #ifdef EIM_EICHD28_WORD1_B0_3DATA_MASK_MASK
-        case 28U:
-            mask =
-                (base->EICHD28_WORD1 & EIM_EICHD28_WORD1_B0_3DATA_MASK_MASK) >> EIM_EICHD28_WORD1_B0_3DATA_MASK_SHIFT;
-            break;
+        case(28): { GET_CHANNEL(28) }
 #endif
 #ifdef EIM_EICHD29_WORD1_B0_3DATA_MASK_MASK
-        case 29U:
-            mask =
-                (base->EICHD29_WORD1 & EIM_EICHD29_WORD1_B0_3DATA_MASK_MASK) >> EIM_EICHD29_WORD1_B0_3DATA_MASK_SHIFT;
-            break;
+        case(29): { GET_CHANNEL(29) }
 #endif
 #ifdef EIM_EICHD30_WORD1_B0_3DATA_MASK_MASK
-        case 30U:
-            mask =
-                (base->EICHD30_WORD1 & EIM_EICHD30_WORD1_B0_3DATA_MASK_MASK) >> EIM_EICHD30_WORD1_B0_3DATA_MASK_SHIFT;
-            break;
+        case(30): { GET_CHANNEL(30) }
 #endif
         default:
             assert(false);

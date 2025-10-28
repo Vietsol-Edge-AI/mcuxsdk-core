@@ -9,6 +9,7 @@
 #define FSL_EIM_H_
 
 #include "fsl_common.h"
+#include "eim_channel_word.h"
 
 /*!
  * @addtogroup eim
@@ -22,7 +23,7 @@
 /*! @name Driver version */
 /*! @{ */
 /*! @brief Driver version. */
-#define FSL_ERM_DRIVER_VERSION (MAKE_VERSION(2U, 0U, 4U))
+#define FSL_EIM_DRIVER_VERSION (MAKE_VERSION(2U, 1U, 0U))
 /*! @} */
 
 /*******************************************************************************
@@ -131,6 +132,27 @@ void EIM_InjectDataBitError(EIM_Type *base, uint32_t channel, uint32_t mask);
  * @retval return checkbit mask.
  */
 uint32_t EIM_GetDataBitMask(EIM_Type *base, uint32_t channel);
+
+/*!
+ * @brief EIM module inject databit error for memory channel n data word, an attempt to invert more than 2 bits in one operation
+ * might result in undefined behavior.
+ *
+ * @param base EIM base address.
+ * @param channel memory channel.
+ * @param mask The data bit to invert value.
+ * @param word The data word to inject error into. The value shall be 1-6.
+ */
+void EIM_InjectDataWordBitError(EIM_Type *base, uint32_t channel, uint32_t mask, uint32_t word);
+
+/*!
+ * @brief EIM module get databit mask for memory channel n data word.
+ *
+ * @param base EIM base address.
+ * @param channel memory channel.
+ * @param word The data word to get mask from. The value shall be 1-6.
+ * @retval return databit mask.
+ */
+uint32_t EIM_GetDataWordBitMask(EIM_Type *base, uint32_t channel, uint32_t word);
 
 /*! @}*/
 
