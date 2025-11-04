@@ -19,6 +19,52 @@
 #define FREQ_1MHz        (1000000UL)
 #define XSPI_LUT_KEY_VAL (0x5AF05AF0UL)
 
+#if (defined(FSL_FEATURE_XSPI_HAS_EENV) && FSL_FEATURE_XSPI_HAS_EENV)
+
+#define XSPI_TG_REG_ADDR_SFP_IPCR(base, tg)                                 \
+    ((uint32_t)(((uint32_t)tg == 0U) ? (uint32_t)(&((base)->SFP_TG_IPCR)) : \
+                                       (uint32_t)(&((base)->SUB_REG_ARRAY[(uint32_t)tg - 1U].SFP_TG_SUB_IPCR))))
+
+#define XSPI_TG_REG_ADDR_SFP_SFAR(base, tg)                                 \
+    ((uint32_t)(((uint32_t)tg == 0U) ? (uint32_t)(&((base)->SFP_TG_SFAR)) : \
+                                       (uint32_t)(&((base)->SUB_REG_ARRAY[(uint32_t)tg - 1U].SFP_TG_SUB_SFAR))))
+
+#define XSPI_TG_REG_ADDR_MDAD(base, tg)                                                         \
+    ((uint32_t)(((uint32_t)tg == 0U) ? (uint32_t)(&((base)->TG0MDAD)) :                         \
+                                       (((uint32_t)tg == 1U) ? (uint32_t)(&((base)->TG1MDAD)) : \
+                                                               (uint32_t)(&((base)->TGMDAD_EXT[(uint32_t)tg - 2U])))))
+
+#define XSPI_REG_ADDR_FRAD_ADDR(base, frad, word) \
+    ((uint32_t)(((word) > 1U) ? 0U : (uint32_t)&((base)->FRAD0_WORD##word) + ((frad) * 0x20U)))
+
+#define XSPI_TG_REG_ADDR_FRAD(base, tg, frad, word)                                                                 \
+    ((uint32_t)(((word) <= 1U) ?                                                                                    \
+                    0U :                                                                                            \
+                ((uint32_t)tg == 0U) ?                                                                              \
+                    (((frad) < 8U) ? (uint32_t)&((base)->FRAD0_WORD##word) + ((frad) * 0x20U) :                     \
+                                     (uint32_t)&((base)->FRAD8_WORD##word) + (((frad) - 8U) * 0x20U)) :             \
+                    (((frad) < 8U) ? (uint32_t)&((base)->SUB_REG_ARRAY[(uint32_t)tg - 1U].FRAD0_WORD##word##_SUB) + \
+                                         ((frad) * 0x20U) :                                                         \
+                                     (uint32_t)&((base)->SUB_REG_ARRAY[(uint32_t)tg - 1U].FRAD8_WORD##word##_SUB) + \
+                                         (((frad) - 8U) * 0x20U))))
+#else
+
+#define XSPI_TG_REG_ADDR_SFP_IPCR(base, tg)              \
+    ((uint32_t)((((uint32_t)tg) == 0U) ?                 \
+                    (uint32_t)(&((base)->SFP_TG_IPCR)) : \
+                    (uint32_t)(&((base)->SUB_REG_MDAM_ARRAY[((uint32_t)tg) - 1U].SFP_TG_SUB_IPCR))))
+
+#define XSPI_TG_REG_ADDR_SFP_SFAR(base, tg)              \
+    ((uint32_t)((((uint32_t)tg) == 0U) ?                 \
+                    (uint32_t)(&((base)->SFP_TG_SFAR)) : \
+                    (uint32_t)(&((base)->SUB_REG_MDAM_ARRAY[((uint32_t)tg) - 1U].SFP_TG_SUB_SFAR))))
+
+#define XSPI_REG_ADDR_FRAD_ADDR(base, frad, word) ((uint32_t)&((base)->FRAD0_WORD##word) + (frad * 0x20U))
+
+#define XSPI_TG_REG_ADDR_MDAD(base, tg) (((tg) == 0) ? (uint32_t)(&((base)->TG0MDAD)) : (uint32_t)(&((base)->TG1MDAD)))
+
+#endif /* (defined(FSL_FEATURE_XSPI_HAS_EENV) && FSL_FEATURE_XSPI_HAS_EENV) */
+
 /* XSPI FSM status. */
 enum
 {
@@ -42,89 +88,10 @@ typedef enum _xspi_transfer_state
 /*! brief Typedef for interrupt handler. */
 typedef void (*xspi_isr_t)(XSPI_Type *base, xspi_handle_t *handle);
 
-#define XSPI_TG_MDAD_REG_OFFSET_ARRAY {(uint32_t)offsetof(XSPI_Type, TG0MDAD), (uint32_t)offsetof(XSPI_Type, TG1MDAD)}
-
-#define XSPI_FRAD_WORD0_REG_OFFSET_ARRAY                                                        \
-    {                                                                                           \
-        (uint32_t)offsetof(XSPI_Type, FRAD0_WORD0), (uint32_t)offsetof(XSPI_Type, FRAD1_WORD0), \
-        (uint32_t)offsetof(XSPI_Type, FRAD2_WORD0), (uint32_t)offsetof(XSPI_Type, FRAD3_WORD0), \
-        (uint32_t)offsetof(XSPI_Type, FRAD4_WORD0), (uint32_t)offsetof(XSPI_Type, FRAD5_WORD0), \
-        (uint32_t)offsetof(XSPI_Type, FRAD6_WORD0), (uint32_t)offsetof(XSPI_Type, FRAD7_WORD0), \
-    }
-
-#define XSPI_FRAD_WORD1_REG_OFFSET_ARRAY                                                        \
-    {                                                                                           \
-        (uint32_t)offsetof(XSPI_Type, FRAD0_WORD1), (uint32_t)offsetof(XSPI_Type, FRAD1_WORD1), \
-        (uint32_t)offsetof(XSPI_Type, FRAD2_WORD1), (uint32_t)offsetof(XSPI_Type, FRAD3_WORD1), \
-        (uint32_t)offsetof(XSPI_Type, FRAD4_WORD1), (uint32_t)offsetof(XSPI_Type, FRAD5_WORD1), \
-        (uint32_t)offsetof(XSPI_Type, FRAD6_WORD1), (uint32_t)offsetof(XSPI_Type, FRAD7_WORD1), \
-    }
-
-#define XSPI_FRAD_WORD2_REG_OFFSET_ARRAY                                                        \
-    {                                                                                           \
-        (uint32_t)offsetof(XSPI_Type, FRAD0_WORD2), (uint32_t)offsetof(XSPI_Type, FRAD1_WORD2), \
-        (uint32_t)offsetof(XSPI_Type, FRAD2_WORD2), (uint32_t)offsetof(XSPI_Type, FRAD3_WORD2), \
-        (uint32_t)offsetof(XSPI_Type, FRAD4_WORD2), (uint32_t)offsetof(XSPI_Type, FRAD5_WORD2), \
-        (uint32_t)offsetof(XSPI_Type, FRAD6_WORD2), (uint32_t)offsetof(XSPI_Type, FRAD7_WORD2), \
-    }
-
-#define XSPI_FRAD_WORD3_REG_OFFSET_ARRAY                                                        \
-    {                                                                                           \
-        (uint32_t)offsetof(XSPI_Type, FRAD0_WORD3), (uint32_t)offsetof(XSPI_Type, FRAD1_WORD3), \
-        (uint32_t)offsetof(XSPI_Type, FRAD2_WORD3), (uint32_t)offsetof(XSPI_Type, FRAD3_WORD3), \
-        (uint32_t)offsetof(XSPI_Type, FRAD4_WORD3), (uint32_t)offsetof(XSPI_Type, FRAD5_WORD3), \
-        (uint32_t)offsetof(XSPI_Type, FRAD6_WORD3), (uint32_t)offsetof(XSPI_Type, FRAD7_WORD3), \
-    }
-
-#define XSPI_FRAD_WORD4_REG_OFFSET_ARRAY                                                        \
-    {                                                                                           \
-        (uint32_t)offsetof(XSPI_Type, FRAD0_WORD4), (uint32_t)offsetof(XSPI_Type, FRAD1_WORD4), \
-        (uint32_t)offsetof(XSPI_Type, FRAD2_WORD4), (uint32_t)offsetof(XSPI_Type, FRAD3_WORD4), \
-        (uint32_t)offsetof(XSPI_Type, FRAD4_WORD4), (uint32_t)offsetof(XSPI_Type, FRAD5_WORD4), \
-        (uint32_t)offsetof(XSPI_Type, FRAD6_WORD4), (uint32_t)offsetof(XSPI_Type, FRAD7_WORD4), \
-    }
-
-#define XSPI_FRAD_WORD5_REG_OFFSET_ARRAY                                                        \
-    {                                                                                           \
-        (uint32_t)offsetof(XSPI_Type, FRAD0_WORD5), (uint32_t)offsetof(XSPI_Type, FRAD1_WORD5), \
-        (uint32_t)offsetof(XSPI_Type, FRAD2_WORD5), (uint32_t)offsetof(XSPI_Type, FRAD3_WORD5), \
-        (uint32_t)offsetof(XSPI_Type, FRAD4_WORD5), (uint32_t)offsetof(XSPI_Type, FRAD5_WORD5), \
-        (uint32_t)offsetof(XSPI_Type, FRAD6_WORD5), (uint32_t)offsetof(XSPI_Type, FRAD7_WORD5), \
-    }
-
-#define XSPI_TGSFAR_REG_OFFSET                                 \
-    {                                                          \
-        offsetof(XSPI_Type, TGSFAR),                           \
-        offsetof(XSPI_Type, SUB_REG_MDAM_ARRAY[0].TGSFAR_SUB), \
-    }
-
-#define XSPI_TGSFARS_REG_OFFSET                                 \
-    {                                                           \
-        offsetof(XSPI_Type, TGSFARS),                           \
-        offsetof(XSPI_Type, SUB_REG_MDAM_ARRAY[0].TGSFARS_SUB), \
-    }
-
-#define XSPI_TGIPCRS_REG_OFFSET                                 \
-    {                                                           \
-        offsetof(XSPI_Type, TGIPCRS),                           \
-        offsetof(XSPI_Type, SUB_REG_MDAM_ARRAY[0].TGIPCRS_SUB), \
-    }
-
-#define XSPI_SFP_TG_IPCR_REG_OFFSET                                 \
-    {                                                               \
-        offsetof(XSPI_Type, SFP_TG_IPCR),                           \
-        offsetof(XSPI_Type, SUB_REG_MDAM_ARRAY[0].SFP_TG_SUB_IPCR), \
-    }
-
-#define XSPI_SFP_TG_SFAR_REG_OFFSET                                 \
-    {                                                               \
-        offsetof(XSPI_Type, SFP_TG_SFAR),                           \
-        offsetof(XSPI_Type, SUB_REG_MDAM_ARRAY[0].SFP_TG_SUB_SFAR), \
-    }
-
 #define XSPI_MCR_X16_MODE_MASK  (0x300000UL)
 #define XSPI_MCR_X16_MODE_SHIFT (20UL)
 #define XSPI_MCR_X16_MODE(x)    (((uint32_t)(x) << XSPI_MCR_X16_MODE_SHIFT) & XSPI_MCR_X16_MODE_MASK)
+
 /*******************************************************************************
  * Prototypes
  ******************************************************************************/
@@ -137,7 +104,11 @@ static uint8_t XSPI_GetPPWBFromPageSize(uint32_t pageSize);
 static XSPI_Type *const s_xspiBases[] = XSPI_BASE_PTRS;
 
 /*! brief Pointers to xspi IRQ number for each instance. */
+#if defined(FSL_FEATURE_XSPI_MULTI_IRQ_COUNT) && FSL_FEATURE_XSPI_MULTI_IRQ_COUNT
+static const IRQn_Type s_xspiIrqs[][FSL_FEATURE_XSPI_MULTI_IRQ_COUNT] = XSPI_IRQS;
+#else
 static const IRQn_Type s_xspiIrqs[] = XSPI_IRQS;
+#endif
 
 /*! brief Pointers to xspi amba base for each instance. */
 RAMVARIABLE (static uint32_t s_xspiAmbaBase[]) = XSPI_AMBA_BASES;
@@ -145,7 +116,11 @@ RAMVARIABLE (static uint32_t s_xspiAmbaBase[]) = XSPI_AMBA_BASES;
 static xspi_transfer_t *s_xspiTransfer[ARRAY_SIZE(s_xspiBases)];
 
 #if defined(FSL_DRIVER_TRANSFER_DOUBLE_WEAK_IRQ) && FSL_DRIVER_TRANSFER_DOUBLE_WEAK_IRQ
+#if (defined(FSL_FEATURE_XSPI_HAS_EENV) && FSL_FEATURE_XSPI_HAS_EENV)
+static xspi_handle_t *s_xspiHandle[ARRAY_SIZE(s_xspiBases)][FSL_FEATURE_XSPI_MULTI_IRQ_COUNT];
+#else
 static xspi_handle_t *s_xspiHandle[ARRAY_SIZE(s_xspiBases)];
+#endif
 #endif
 
 #if !(defined(FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL) && FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL)
@@ -168,12 +143,6 @@ static const clock_ip_name_t s_xspi_cache64Clocks[] = CACHE64_CLOCKS;
 /*! brief Pointers to XSPI resets for each instance. */
 static const reset_ip_name_t s_xspiResets[] = XSPI_RSTS;
 #endif
-
-RAMVARIABLE (static uint32_t s_tgSfarsRegOffset[])    = XSPI_TGSFARS_REG_OFFSET;
-RAMVARIABLE (static uint32_t s_tgIpcrsRegOffset[])     = XSPI_TGIPCRS_REG_OFFSET;
-RAMVARIABLE (static uint32_t s_sfpTgIpcrRegOffset[])   = XSPI_SFP_TG_IPCR_REG_OFFSET;
-RAMVARIABLE (static uint32_t s_sfpTgIpSfarRegOffset[]) = XSPI_SFP_TG_SFAR_REG_OFFSET;
-RAMVARIABLE (static uint32_t s_tgMdadRegOffset[])     = XSPI_TG_MDAD_REG_OFFSET_ARRAY;
 
 volatile bool g_IpAccessIpcrFail = false;
 volatile bool g_IpAccessSfarFail = false;
@@ -219,10 +188,12 @@ RAMFUNC static uint8_t XSPI_GetPPWBFromPageSize(uint32_t pageSize)
         case 2048UL:
         {
             ppwbValue = 11U;
+            break;
         }
         case 4096UL:
         {
             ppwbValue = 12U;
+            break;
         }
         default:
         {
@@ -235,6 +206,26 @@ RAMFUNC static uint8_t XSPI_GetPPWBFromPageSize(uint32_t pageSize)
     return ppwbValue;
 }
 
+RAMFUNC static inline status_t XSPI_CheckAccessConditions(XSPI_Type *base)
+{
+    if (XSPI_CheckAhbReadAccessAsserted(base))
+    {
+        return kStatus_XSPI_AhbReadAccessAsserted;
+    }
+
+    if (XSPI_CheckAhbWriteAccessAsserted(base))
+    {
+        return kStatus_XSPI_AhbWriteAccessAsserted;
+    }
+
+    if (XSPI_CheckGlobalConfigLocked(base))
+    {
+        return kStatus_XSPI_RegWriteLocked;
+    }
+
+    return kStatus_Success;
+}
+
 RAMFUNC static status_t XSPI_StartIpReadNonBlocking(XSPI_Type *base, xspi_handle_t *handle, uint32_t dataSize)
 {
     uint32_t rxBufferWaterMark = 0UL;
@@ -242,9 +233,16 @@ RAMFUNC static status_t XSPI_StartIpReadNonBlocking(XSPI_Type *base, xspi_handle
     status_t status            = kStatus_Success;
     uint32_t instance          = XSPI_GetInstance(base);
 
+#if (defined(FSL_FEATURE_XSPI_HAS_EENV) && FSL_FEATURE_XSPI_HAS_EENV)
+    XSPI_ClearRxBufferTG(base, handle->tgId);
+    XSPI_ClearCmdExecutionArbitrationStatusFlagsTG(
+        base, handle->tgId,
+        (uint32_t)(kXSPI_FlagIpCmdFinished | kXSPI_FlagRxBufferWatermarkExceeded | kXSPI_FlagRxBufferOverflow));
+#else
     XSPI_ClearRxBuffer(base);
     XSPI_ClearCmdExecutionArbitrationStatusFlags(
         base, (uint32_t)(kXSPI_FlagIpCmdFinished | kXSPI_FlagRxBufferWatermarkExceeded | kXSPI_FlagRxBufferOverflow));
+#endif
     if (dataSize >= XSPI_IP_RX_BUFFER_SIZE)
     {
         /* In case of data size is larger than RX buffer size, the big size request should be break into small
@@ -275,7 +273,12 @@ RAMFUNC static status_t XSPI_StartIpReadNonBlocking(XSPI_Type *base, xspi_handle
         }
         transferSize = dataSize;
     }
+
+#if (defined(FSL_FEATURE_XSPI_HAS_EENV) && FSL_FEATURE_XSPI_HAS_EENV)
+    (void)XSPI_UpdateRxBufferWaterMarkTG(base, handle->tgId, rxBufferWaterMark);
+#else
     (void)XSPI_UpdateRxBufferWaterMark(base, rxBufferWaterMark);
+#endif
 
     handle->state = kXSPI_StateStartIpAccess;
     status        = XSPI_StartIpAccessNonBlocking(
@@ -292,8 +295,13 @@ RAMFUNC static status_t XSPI_StartIpReadNonBlocking(XSPI_Type *base, xspi_handle
     }
     handle->state = kXSPI_StateBusyRead;
 
-    XSPI_EnableInterrupts(base, (uint64_t)(kXSPI_RxBufferDrainIntEnable | kXSPI_RxBufferOverflowIntEnable |
-                                           kXSPI_TimeoutErrIntEnable | kXSPI_IpCmdTrigFailErrorIntEnable));
+#if (defined(FSL_FEATURE_XSPI_HAS_EENV) && FSL_FEATURE_XSPI_HAS_EENV)
+    XSPI_EnableInterruptsTG(base, handle->tgId,
+#else
+    XSPI_EnableInterrupts(base,
+#endif
+                            (uint64_t)(kXSPI_RxBufferDrainIntEnable | kXSPI_RxBufferOverflowIntEnable |
+                                       kXSPI_TimeoutErrIntEnable | kXSPI_IpCmdTrigFailErrorIntEnable));
     return status;
 }
 
@@ -303,7 +311,11 @@ RAMFUNC static status_t XSPI_StartIpWriteNonBlocking(XSPI_Type *base, xspi_handl
     uint32_t transferSize = 0UL;
     uint32_t instance     = XSPI_GetInstance(base);
 
+#if (defined(FSL_FEATURE_XSPI_HAS_EENV) && FSL_FEATURE_XSPI_HAS_EENV)
+    XSPI_ClearTxBufferTG(base, handle->tgId);
+#else
     XSPI_ClearTxBuffer(base);
+#endif
 
     if (dataSize >= XSPI_IP_TX_BUFFER_SIZE)
     {
@@ -329,8 +341,13 @@ RAMFUNC static status_t XSPI_StartIpWriteNonBlocking(XSPI_Type *base, xspi_handl
     }
 
     handle->state = kXSPI_StateBusyWrite;
-    XSPI_EnableInterrupts(base, (uint64_t)(kXSPI_TxBufferFillIntEnable | kXSPI_TxBufferUnderrunIntEnable |
-                                           kXSPI_TimeoutErrIntEnable | kXSPI_IpCmdTrigFailErrorIntEnable));
+#if (defined(FSL_FEATURE_XSPI_HAS_EENV) && FSL_FEATURE_XSPI_HAS_EENV)
+    XSPI_EnableInterruptsTG(base, handle->tgId,
+#else
+    XSPI_EnableInterrupts(base,
+#endif
+                            (uint64_t)(kXSPI_TxBufferFillIntEnable | kXSPI_TxBufferUnderrunIntEnable |
+                                       kXSPI_TimeoutErrIntEnable | kXSPI_IpCmdTrigFailErrorIntEnable));
 
     return status;
 }
@@ -365,16 +382,16 @@ RAMFUNC uint32_t XSPI_GetInstance(XSPI_Type *base)
  * param base XSPI base pointer.
  * param status interrupt status.
  */
-RAMFUNC status_t XSPI_CheckAndClearError(XSPI_Type *base, uint32_t status)
+RAMFUNC status_t XSPI_CheckAndClearErrorTG(XSPI_Type *base, xspi_target_group_t tgId, uint32_t status)
 {
-    status_t result = kStatus_Success;
+    status_t result        = kStatus_Success;
+    __IO uint32_t *errstat = (__IO uint32_t *)XSPI_TG_REG_ADDR(base, tgId, ERRSTAT);
+    __IO uint32_t *tgSfars = (__IO uint32_t *)XSPI_TG_REG_ADDR(base, tgId, TGSFARS);
+    __IO uint32_t *tgIpcrs = (__IO uint32_t *)XSPI_TG_REG_ADDR(base, tgId, TGIPCRS);
+    __IO uint32_t *ipserr  = (__IO uint32_t *)XSPI_TG_REG_ADDR(base, tgId, IPSERROR);
 
     /* Check for error. */
-    status &=
-        (uint32_t)(kXSPI_ErrorNoFradMatch | kXSPI_ErrorFrad0Access | kXSPI_ErrorFrad1Access | kXSPI_ErrorFrad2Access |
-                   kXSPI_ErrorFrad3Access | kXSPI_ErrorFrad4Access | kXSPI_ErrorFrad5Access | kXSPI_ErrorFrad6Access |
-                   kXSPI_ErrorFrad7Access | kXSPI_ErrorIpBusTransfer | kXSPI_ErrorTg0Ipcr | kXSPI_ErrorTg0Sfar |
-                   kXSPI_ErrorTg1Ipcr | kXSPI_ErrorTg1Sfar | kXSPI_ErrorTimeout);
+    status &= (uint32_t)kXSPI_ErrorAllFlags;
     if (0U != status)
     {
         /* Select the correct error code.. */
@@ -382,7 +399,7 @@ RAMFUNC status_t XSPI_CheckAndClearError(XSPI_Type *base, uint32_t status)
         {
             result = kStatus_XSPI_SequenceExecutionTimeout;
             /* Clear the flags. */
-            base->ERRSTAT = (uint32_t)kXSPI_SequenceExecutionTimeoutFlag;
+            *errstat = (uint32_t)kXSPI_SequenceExecutionTimeoutFlag;
         }
         else if (0U != ((status & (uint32_t)kXSPI_FradMatchErrorFlag) | (status & (uint32_t)kXSPI_FradnAccErrorFlag)))
         {
@@ -390,31 +407,30 @@ RAMFUNC status_t XSPI_CheckAndClearError(XSPI_Type *base, uint32_t status)
             /* Clear the flags. */
             if (0U != (status & (uint32_t)kXSPI_FradMatchErrorFlag))
             {
-                base->ERRSTAT = (uint32_t)kXSPI_FradMatchErrorFlag;
+                *errstat = (uint32_t)kXSPI_FradMatchErrorFlag;
             }
             else
             {
-                base->ERRSTAT = (uint32_t)kXSPI_FradnAccErrorFlag;
+                *errstat = (uint32_t)kXSPI_FradnAccErrorFlag;
             }
         }
         else if (0U != (status & (uint32_t)kXSPI_IpsErrorFlag))
         {
             result = kStatus_XSPI_IpsBusTransError;
             /* Clear the flags. */
-            base->IPSERROR |= XSPI_IPSERROR_CLR_MASK;
+            *ipserr |= XSPI_IPSERROR_CLR_MASK;
         }
-        else if (0U != ((status & (uint32_t)kXSPI_Tg0SfarErrorFlag) | (status & (uint32_t)kXSPI_Tg1SfarErrorFlag) |
-                        (status & (uint32_t)kXSPI_TgnIpcrErrorFlag)))
+        else if (0U != ((status & (uint32_t)kXSPI_TgnSfarErrorFlag) | (status & (uint32_t)kXSPI_TgnIpcrErrorFlag)))
         {
             result = kStatus_XSPI_TgQueueWritingError;
             /* Clear the flags. */
-            if (0U != ((status & (uint32_t)kXSPI_Tg0SfarErrorFlag) | (status & (uint32_t)kXSPI_Tg1SfarErrorFlag)))
+            if (0U != ((status & (uint32_t)kXSPI_TgnSfarErrorFlag)))
             {
-                base->TGSFARS |= XSPI_TGSFARS_CLR_MASK;
+                *tgSfars |= XSPI_TGSFARS_CLR_MASK;
             }
             else
             {
-                base->TGIPCRS |= XSPI_TGIPCRS_CLR_MASK;
+                *tgIpcrs |= XSPI_TGIPCRS_CLR_MASK;
             }
         }
         else
@@ -423,8 +439,12 @@ RAMFUNC status_t XSPI_CheckAndClearError(XSPI_Type *base, uint32_t status)
         }
 
         /* Reset fifo. These flags clear automatically. */
-        base->MCR |= XSPI_MCR_CLR_RXF_MASK;
-        base->MCR |= XSPI_MCR_CLR_TXF_MASK;
+#if (defined(FSL_FEATURE_XSPI_HAS_EENV) && FSL_FEATURE_XSPI_HAS_EENV)
+        XSPI_ResetTxRxBufferTG(base, tgId,
+#else
+        XSPI_ResetTxRxBuffer(base,
+#endif
+                               true, true);
     }
 
     return result;
@@ -462,6 +482,32 @@ RAMFUNC void XSPI_Init(XSPI_Type *base, const xspi_config_t *ptrConfig)
 
     /* Clear AHB buffer, TX buffer, RX buffer. */
     XSPI_ClearAhbBuffer(base);
+
+#if (defined(FSL_FEATURE_XSPI_HAS_EENV) && FSL_FEATURE_XSPI_HAS_EENV)
+    for (uint8_t tgId = 0; tgId < XSPI_TARGET_GROUP_COUNT; tgId++)
+    {
+        XSPI_ClearTxBufferTG(base, (xspi_target_group_t)tgId);
+        XSPI_ClearRxBufferTG(base, (xspi_target_group_t)tgId);
+
+        if (tgId == 0U)
+        {
+            /* If any flags are asserted, clear firstly. */
+            tmp32 = base->FR;
+            if (tmp32 != 0UL)
+            {
+                base->FR = tmp32;
+            }
+        }
+        else
+        {
+            tmp32 = base->SUB_REG_ARRAY[tgId - 1].FR_SUB;
+            if (tmp32 != 0UL)
+            {
+                base->SUB_REG_ARRAY[tgId - 1].FR_SUB = tmp32;
+            }
+        }
+    }
+#else
     XSPI_ClearTxBuffer(base);
     XSPI_ClearRxBuffer(base);
 
@@ -471,6 +517,7 @@ RAMFUNC void XSPI_Init(XSPI_Type *base, const xspi_config_t *ptrConfig)
     {
         base->FR = tmp32;
     }
+#endif /* FSL_FEATURE_XSPI_HAS_EENV */
 
 #if (defined(FSL_FEATURE_XSPI_HAS_DOZE_MODE) && FSL_FEATURE_XSPI_HAS_DOZE_MODE)
     XSPI_EnableDozeMode(base, ptrConfig->enableDoze);
@@ -921,7 +968,9 @@ RAMFUNC status_t XSPI_SetDeviceConfig(XSPI_Type *base, xspi_device_config_t *dev
     if (devConfig->deviceInterface == kXSPI_StrandardExtendedSPI)
     {
         tmp8 = XSPI_GetPPWBFromPageSize(devConfig->interfaceSettings.strandardExtendedSPISettings.pageSize);
+#if defined(XSPI_MCR_DQS_OUT_EN_MASK)
         base->MCR &= ~XSPI_MCR_DQS_OUT_EN_MASK;
+#endif
         base->SFACR = (base->SFACR & ~XSPI_SFACR_PPWB_MASK) | XSPI_SFACR_PPWB(tmp8);
     }
     else
@@ -934,9 +983,11 @@ RAMFUNC status_t XSPI_SetDeviceConfig(XSPI_Type *base, xspi_device_config_t *dev
             enableX16Mode = true;
         }
         XSPI_EnableVariableLatency(base, devConfig->interfaceSettings.hyperBusSettings.enableVariableLatency);
+#if defined(XSPI_MCR_DQS_OUT_EN_MASK)
         base->MCR |= XSPI_MCR_DQS_OUT_EN_MASK;
+#endif
         base->SFACR = (base->SFACR & ~XSPI_SFACR_FORCE_A10_MASK) |
-                      XSPI_SFACR_FORCE_A10(devConfig->interfaceSettings.hyperBusSettings.forceBit10To1);
+                      (devConfig->interfaceSettings.hyperBusSettings.forceBit10To1 ? XSPI_SFACR_FORCE_A10_MASK : 0U);
     }
 
     base->FLSHCR = ((base->FLSHCR) & ~(XSPI_FLSHCR_TCSS_MASK | XSPI_FLSHCR_TCSH_MASK)) |
@@ -961,6 +1012,7 @@ RAMFUNC status_t XSPI_SetDeviceConfig(XSPI_Type *base, xspi_device_config_t *dev
         (void)XSPI_SetSFMStatusRegInfo(base, devConfig->ptrDeviceRegInfo);
     }
 
+#if (defined(FSL_FEATURE_XSPI_HAS_DDR) && FSL_FEATURE_XSPI_HAS_DDR)
     if (devConfig->ptrDeviceDdrConfig != NULL)
     {
         enableDDR = devConfig->ptrDeviceDdrConfig->enableDdr;
@@ -978,6 +1030,7 @@ RAMFUNC status_t XSPI_SetDeviceConfig(XSPI_Type *base, xspi_device_config_t *dev
     {
         base->MCR &= ~XSPI_MCR_DDR_EN_MASK;
     }
+#endif
 
     for (uint8_t i = 0U; i < XSPI_SFAD_COUNT2; i++)
     {
@@ -1033,9 +1086,9 @@ RAMFUNC status_t XSPI_SetDeviceConfig(XSPI_Type *base, xspi_device_config_t *dev
  *
  * code
  * Set watermark as 4 bytes:
- * XSPI_UpdateRxBufferWaterMark(XSPI0, 4UL);
+ * XSPI_UpdateRxBufferWaterMarkTG(XSPI0, 4UL);
  * Set watermark as 8 bytes:
- * XSPI_UpdateRxBufferWaterMark(XSPI0, 8UL);
+ * XSPI_UpdateRxBufferWaterMarkTG(XSPI0, 8UL);
  * endcode
  *
  *
@@ -1048,10 +1101,12 @@ RAMFUNC status_t XSPI_SetDeviceConfig(XSPI_Type *base, xspi_device_config_t *dev
  * multiple of 4 bytes.
  * retval kStatus_Success Successful to update watermark.
  */
-RAMFUNC status_t XSPI_UpdateRxBufferWaterMark(XSPI_Type *base, uint32_t waterMark)
+RAMFUNC status_t XSPI_UpdateRxBufferWaterMarkTG(XSPI_Type *base, xspi_target_group_t tgId, uint32_t waterMark)
 {
     assert(waterMark != 0UL);
     assert(waterMark <= 256UL);
+
+    __IO uint32_t *rbct = (__IO uint32_t *)XSPI_TG_REG_ADDR(base, tgId, RBCT);
 
     if (XSPI_CheckIPAccessAsserted(base))
     {
@@ -1063,7 +1118,7 @@ RAMFUNC status_t XSPI_UpdateRxBufferWaterMark(XSPI_Type *base, uint32_t waterMar
         return kStatus_XSPI_WaterMarkIllegal;
     }
 
-    base->RBCT = XSPI_RBCT_WMRK((waterMark / 4UL) - 1UL);
+    *rbct = XSPI_RBCT_WMRK((waterMark / 4UL) - 1UL);
 
     return kStatus_Success;
 }
@@ -1079,9 +1134,12 @@ RAMFUNC status_t XSPI_UpdateRxBufferWaterMark(XSPI_Type *base, uint32_t waterMar
  * multiple of 4 bytes.
  * retval kStatus_Success Successful to update watermark.
  */
-RAMFUNC status_t XSPI_UpdateTxBufferWaterMark(XSPI_Type *base, uint32_t waterMark)
+RAMFUNC status_t XSPI_UpdateTxBufferWaterMarkTG(XSPI_Type *base, xspi_target_group_t tgId, uint32_t waterMark)
 {
     assert(waterMark != 0UL);
+
+    __IO uint32_t *tbct = (__IO uint32_t *)XSPI_TG_REG_ADDR(base, tgId, TBCT);
+
     if (XSPI_CheckIPAccessAsserted(base))
     {
         return kStatus_XSPI_IPAccessAsserted;
@@ -1092,7 +1150,7 @@ RAMFUNC status_t XSPI_UpdateTxBufferWaterMark(XSPI_Type *base, uint32_t waterMar
         return kStatus_XSPI_WaterMarkIllegal;
     }
 
-    base->TBCT = XSPI_TBCT_WMRK((waterMark / 4UL) - 1UL);
+    *tbct = XSPI_TBCT_WMRK((waterMark / 4UL) - 1UL);
 
     return kStatus_Success;
 }
@@ -1104,11 +1162,16 @@ RAMFUNC status_t XSPI_UpdateTxBufferWaterMark(XSPI_Type *base, uint32_t waterMar
  * param[in] ealMode Specify the exclusive access lock mode.
  * param[in] fradId Specify the frad.
  */
-RAMFUNC void XSPI_SetSFPFradEALMode(XSPI_Type *base, xspi_exclusive_access_lock_mode_t ealMode, uint8_t fradId)
+RAMFUNC void XSPI_SetSFPFradEALModeTG(XSPI_Type *base,
+                                      xspi_target_group_t tgId,
+                                      xspi_exclusive_access_lock_mode_t ealMode,
+                                      uint8_t fradId)
 {
-    uint32_t fradWord3RegOffset[] = XSPI_FRAD_WORD3_REG_OFFSET_ARRAY;
-
-    uint32_t fradWord3RegAddr = (uint32_t)base + fradWord3RegOffset[fradId];
+#if (defined(FSL_FEATURE_XSPI_HAS_EENV) && FSL_FEATURE_XSPI_HAS_EENV)
+    uint32_t fradWord3RegAddr = XSPI_TG_REG_ADDR_FRAD(base, tgId, fradId, 3);
+#else
+    uint32_t fradWord3RegAddr = XSPI_REG_ADDR_FRAD_ADDR(base, fradId, 3);
+#endif
 
     xspi_exclusive_access_lock_mode_t curEalMode =
         (xspi_exclusive_access_lock_mode_t)(uint32_t)(((*(uint32_t *)fradWord3RegAddr) & XSPI_FRAD0_WORD3_EAL_MASK) >>
@@ -1152,7 +1215,7 @@ RAMFUNC void XSPI_UpdateSFPConfig(XSPI_Type *base,
 
     enableMdad = (ptrSfpMdadConfig != NULL) ? true : false;
     enableFrad = (ptrSfpFradConfig != NULL) ? true : false;
-    enableSFP  = (bool)(enableFrad | enableFrad);
+    enableSFP  = (bool)(enableMdad | enableFrad);
 
     if (enableSFP)
     {
@@ -1163,7 +1226,7 @@ RAMFUNC void XSPI_UpdateSFPConfig(XSPI_Type *base,
 
             for (i = 0U; i < XSPI_TARGET_GROUP_COUNT; i++)
             {
-                tgMdadRegAddr = (uint32_t)base + s_tgMdadRegOffset[i];
+                tgMdadRegAddr = XSPI_TG_REG_ADDR_MDAD(base, i);
 
                 *(uint32_t *)tgMdadRegAddr = XSPI_TG0MDAD_MIDMATCH(ptrSfpMdadConfig->tgMdad[i].masterIdReference) |
                                              XSPI_TG0MDAD_MASKTYPE(ptrSfpMdadConfig->tgMdad[i].maskType) |
@@ -1181,10 +1244,6 @@ RAMFUNC void XSPI_UpdateSFPConfig(XSPI_Type *base,
         if (enableFrad)
         {
             base->MGC |= (XSPI_MGC_GVLDFRAD_MASK | XSPI_MGC_GVLD_MASK);
-            uint32_t fradWord0RegOffset[] = XSPI_FRAD_WORD0_REG_OFFSET_ARRAY;
-            uint32_t fradWord1RegOffset[] = XSPI_FRAD_WORD1_REG_OFFSET_ARRAY;
-            uint32_t fradWord2RegOffset[] = XSPI_FRAD_WORD2_REG_OFFSET_ARRAY;
-            uint32_t fradWord3RegOffset[] = XSPI_FRAD_WORD3_REG_OFFSET_ARRAY;
 
             uint32_t fradWord0RegAddr = 0UL;
             uint32_t fradWord1RegAddr = 0UL;
@@ -1193,29 +1252,57 @@ RAMFUNC void XSPI_UpdateSFPConfig(XSPI_Type *base,
 
             for (i = 0U; i < XSPI_SFP_FRAD_COUNT; i++)
             {
-                fradWord0RegAddr = (uint32_t)base + fradWord0RegOffset[i];
-                fradWord1RegAddr = (uint32_t)base + fradWord1RegOffset[i];
-                fradWord2RegAddr = (uint32_t)base + fradWord2RegOffset[i];
-                fradWord3RegAddr = (uint32_t)base + fradWord3RegOffset[i];
+                fradWord0RegAddr = XSPI_REG_ADDR_FRAD_ADDR(base, i, 0);
+                fradWord1RegAddr = XSPI_REG_ADDR_FRAD_ADDR(base, i, 1);
 
                 /* Set the most-significant 16 bits of the starting address(64-KB alignment). */
                 *(uint32_t *)fradWord0RegAddr = ptrSfpFradConfig->fradConfig[i].startAddress & 0xFFFF0000UL;
                 /* Set the most-significant 16 bits of the ending address(64-KB alignment). */
                 *(uint32_t *)fradWord1RegAddr = ptrSfpFradConfig->fradConfig[i].endAddress & 0xFFFF0000UL;
 
-                XSPI_SetSFPFradEALMode(base, ptrSfpFradConfig->fradConfig[i].exclusiveAccessLock, i);
-                if (ptrSfpFradConfig->fradConfig[i].exclusiveAccessLock == kXSPI_ExclusiveAccessLockDisabled)
+                for (uint8_t tgId = 0U; tgId < XSPI_TARGET_GROUP_COUNT; tgId++)
                 {
-                    *(uint32_t *)fradWord2RegAddr =
-                        (*(uint32_t *)fradWord3RegAddr &
-                         (~(XSPI_FRAD0_WORD2_MD0ACP_MASK | XSPI_FRAD0_WORD2_MD1ACP_MASK))) |
-                        (XSPI_FRAD0_WORD2_MD0ACP(ptrSfpFradConfig->fradConfig[i].tg0MasterAccess) |
-                         XSPI_FRAD0_WORD2_MD1ACP(ptrSfpFradConfig->fradConfig[i].tg1MasterAccess));
+#if (defined(FSL_FEATURE_XSPI_HAS_EENV) && FSL_FEATURE_XSPI_HAS_EENV)
+                    fradWord2RegAddr = XSPI_TG_REG_ADDR_FRAD(base, tgId, i, 2);
+                    fradWord3RegAddr = XSPI_TG_REG_ADDR_FRAD(base, tgId, i, 3);
+                    XSPI_SetSFPFradEALModeTG(base, (xspi_target_group_t)tgId,
+                                             ptrSfpFradConfig->fradConfig[i].tgConfig[tgId].exclusiveAccessLock, i);
+                    if (ptrSfpFradConfig->fradConfig[i].tgConfig[tgId].exclusiveAccessLock ==
+                        kXSPI_ExclusiveAccessLockDisabled)
+                    {
+                        uint32_t mdacps = 0;
+                        for (uint8_t count = 0U; count < XSPI_TARGET_GROUP_COUNT; count++)
+                        {
+                            mdacps |= (XSPI_FRAD0_WORD2_MD0ACP(
+                                           ptrSfpFradConfig->fradConfig[i].tgConfig[tgId].tgMasterAccess[count])
+                                       << (3U * count));
+                        }
+                        *(uint32_t *)fradWord2RegAddr = mdacps;
+                    }
+                    *(uint32_t *)fradWord3RegAddr =
+                        (XSPI_FRAD0_WORD3_VLD(ptrSfpFradConfig->fradConfig[i].tgConfig[tgId].assignIsValid) |
+                         XSPI_FRAD0_WORD3_LOCK(ptrSfpFradConfig->fradConfig[i].tgConfig[tgId].descriptorLock));
+#else
+                    fradWord2RegAddr = XSPI_REG_ADDR_FRAD_ADDR(base, i, 2);
+                    fradWord3RegAddr = XSPI_REG_ADDR_FRAD_ADDR(base, i, 3);
+
+                    XSPI_SetSFPFradEALMode(base, ptrSfpFradConfig->fradConfig[i].exclusiveAccessLock, i);
+
+                    if (ptrSfpFradConfig->fradConfig[i].exclusiveAccessLock == kXSPI_ExclusiveAccessLockDisabled)
+                    {
+                        *(uint32_t *)fradWord2RegAddr =
+                            (*(uint32_t *)fradWord3RegAddr &
+                             (~(XSPI_FRAD0_WORD2_MD0ACP_MASK | XSPI_FRAD0_WORD2_MD1ACP_MASK))) |
+                            (XSPI_FRAD0_WORD2_MD0ACP(ptrSfpFradConfig->fradConfig[i].tg0MasterAccess) |
+                             XSPI_FRAD0_WORD2_MD1ACP(ptrSfpFradConfig->fradConfig[i].tg1MasterAccess));
+                    }
+                    *(uint32_t *)fradWord3RegAddr =
+                        ((*(uint32_t *)fradWord3RegAddr) &
+                         (~(XSPI_FRAD0_WORD3_LOCK_MASK | XSPI_FRAD0_WORD3_VLD_MASK))) |
+                        (XSPI_FRAD0_WORD3_VLD(ptrSfpFradConfig->fradConfig[i].assignIsValid) |
+                         XSPI_FRAD0_WORD3_LOCK(ptrSfpFradConfig->fradConfig[i].descriptorLock));
+#endif
                 }
-                *(uint32_t *)fradWord3RegAddr =
-                    ((*(uint32_t *)fradWord3RegAddr) & (~(XSPI_FRAD0_WORD3_LOCK_MASK | XSPI_FRAD0_WORD3_VLD_MASK))) |
-                    (XSPI_FRAD0_WORD3_VLD(ptrSfpFradConfig->fradConfig[i].assignIsValid) |
-                     XSPI_FRAD0_WORD3_LOCK(ptrSfpFradConfig->fradConfig[i].descriptorLock));
             }
         }
     }
@@ -1232,13 +1319,18 @@ RAMFUNC void XSPI_UpdateSFPConfig(XSPI_Type *base,
  * param[out] ptrInfo Pointer to the variable in type of ref xspi_frad_transaction_info_t to store information.
  * param[in] fradId Specify the frad Id.
  */
-RAMFUNC void XSPI_GetFradLastTransactionsInfo(XSPI_Type *base, xspi_frad_transaction_info_t *ptrInfo, uint8_t fradId)
+RAMFUNC void XSPI_GetFradLastTransactionsInfoTG(XSPI_Type *base,
+                                                xspi_target_group_t tgId,
+                                                xspi_frad_transaction_info_t *ptrInfo,
+                                                uint8_t fradId)
 {
-    uint32_t fradWord4RegOffset[] = XSPI_FRAD_WORD4_REG_OFFSET_ARRAY;
-    uint32_t fradWord5RegOffset[] = XSPI_FRAD_WORD5_REG_OFFSET_ARRAY;
-
-    uint32_t fradWord4RegAddr = (uint32_t)base + fradWord4RegOffset[fradId];
-    uint32_t fradWord5RegAddr = (uint32_t)base + fradWord5RegOffset[fradId];
+#if (defined(FSL_FEATURE_XSPI_HAS_EENV) && FSL_FEATURE_XSPI_HAS_EENV)
+    uint32_t fradWord4RegAddr = XSPI_TG_REG_ADDR_FRAD(base, tgId, fradId, 4);
+    uint32_t fradWord5RegAddr = XSPI_TG_REG_ADDR_FRAD(base, tgId, fradId, 5);
+#else
+    uint32_t fradWord4RegAddr = XSPI_REG_ADDR_FRAD_ADDR(base, fradId, 4);
+    uint32_t fradWord5RegAddr = XSPI_REG_ADDR_FRAD_ADDR(base, fradId, 5);
+#endif
 
     ptrInfo->startAddr         = (*(uint32_t *)fradWord4RegAddr);
     ptrInfo->masterId          = (uint8_t)(((*(uint32_t *)fradWord5RegAddr) & XSPI_FRAD0_WORD5_CMP_MDID_MASK) >>
@@ -1308,17 +1400,10 @@ RAMFUNC status_t XSPI_UpdateIPAccessTimeoutCounter(XSPI_Type *base, uint32_t cou
  */
 RAMFUNC xspi_mdad_error_reason_t XSPI_GetMdadErrorReason(XSPI_Type *base, xspi_target_group_t tgId)
 {
-    uint8_t tmp8 = 0U;
+    uint32_t tgIpcrsRegAddr = XSPI_TG_REG_ADDR(base, tgId, TGIPCRS);
+    uint8_t tmp8            = 0U;
 
-    if (tgId == kXSPI_TargetGroup0)
-    {
-        tmp8 = (uint8_t)((base->TGIPCRS & XSPI_TGIPCRS_ERR_MASK) >> XSPI_TGIPCRS_ERR_SHIFT);
-    }
-    else
-    {
-        tmp8 = (uint8_t)((base->SUB_REG_MDAM_ARRAY[0].TGIPCRS_SUB & XSPI_TGIPCRS_SUB_ERR_MASK) >>
-                         XSPI_TGIPCRS_SUB_ERR_SHIFT);
-    }
+    tmp8 = (uint8_t)(((*(uint32_t *)tgIpcrsRegAddr) & XSPI_TGIPCRS_ERR_MASK) >> XSPI_TGIPCRS_ERR_SHIFT);
 
     return (xspi_mdad_error_reason_t)tmp8;
 }
@@ -1331,7 +1416,7 @@ RAMFUNC xspi_mdad_error_reason_t XSPI_GetMdadErrorReason(XSPI_Type *base, xspi_t
  */
 RAMFUNC void XSPI_ClearTgAddrWriteStatus(XSPI_Type *base, xspi_target_group_t tgId)
 {
-    uint32_t tgSfarsRegAddr = (uint32_t)base + (uint32_t)s_tgSfarsRegOffset[(uint8_t)(tgId)];
+    uint32_t tgSfarsRegAddr = XSPI_TG_REG_ADDR(base, tgId, TGSFARS);
 
     *((uint32_t *)tgSfarsRegAddr) |= XSPI_TGSFARS_CLR_MASK;
 }
@@ -1346,7 +1431,7 @@ RAMFUNC void XSPI_ClearTgAddrWriteStatus(XSPI_Type *base, xspi_target_group_t tg
  */
 RAMFUNC void XSPI_GetTgAddrWriteStatus(XSPI_Type *base, xspi_target_group_t tgId, xspi_tg_add_write_status_t *ptrStatus)
 {
-    uint32_t tgSfarsRegAddr = (uint32_t)base + (uint32_t)s_tgSfarsRegOffset[(uint8_t)(tgId)];
+    uint32_t tgSfarsRegAddr = XSPI_TG_REG_ADDR(base, tgId, TGSFARS);
     uint32_t tmp32          = (*(uint32_t *)tgSfarsRegAddr);
 
     ptrStatus->managerId       = (uint8_t)(tmp32 & XSPI_TGSFARS_TG_MID_MASK);
@@ -1360,10 +1445,9 @@ RAMFUNC void XSPI_GetTgAddrWriteStatus(XSPI_Type *base, xspi_target_group_t tgId
  * param[in] base XSPI peripheral base address.
  * param[in] tgId Specify the target group.
  */
-RAMFUNC void XSPI_UnlockIpAccessArbitration(XSPI_Type *base, xspi_target_group_t tgId)
+RAMFUNC void XSPI_UnlockIpAccessArbitrationTG(XSPI_Type *base, xspi_target_group_t tgId)
 {
-    uint32_t tgIpcrRegOffset[] = XSPI_TGIPCRS_REG_OFFSET;
-    uint32_t tgIpcrRegAddr     = (uint32_t)base + tgIpcrRegOffset[(uint8_t)tgId];
+    uint32_t tgIpcrRegAddr = XSPI_TG_REG_ADDR_SFP_IPCR(base, tgId);
 
     *(uint32_t *)tgIpcrRegAddr |= XSPI_SFP_TG_IPCR_ARB_UNLOCK_MASK;
 }
@@ -1385,17 +1469,21 @@ RAMFUNC void XSPI_UnlockIpAccessArbitration(XSPI_Type *base, xspi_target_group_t
 RAMFUNC status_t XSPI_StartIpAccess(
     XSPI_Type *base, uint32_t addr, uint8_t seqIndex, size_t byteSize, xspi_target_group_t tgId, bool lockArbitration)
 {
-    uint32_t tgSfarsRegAddr     = (uint32_t)base + (uint32_t)s_tgSfarsRegOffset[(uint8_t)tgId];
-    uint32_t tgIpcrsRegAddr     = (uint32_t)base + (uint32_t)s_tgIpcrsRegOffset[(uint8_t)tgId];
-    uint32_t sfpTgIpcrRegAddr   = (uint32_t)base + (uint32_t)s_sfpTgIpcrRegOffset[(uint8_t)tgId];
-    uint32_t sfpTgIpSfarRegAddr = (uint32_t)base + (uint32_t)s_sfpTgIpSfarRegOffset[(uint8_t)tgId];
-    uint32_t tgMdadRegAddr      = (uint32_t)base + (uint32_t)s_tgMdadRegOffset[(uint8_t)tgId];
+    uint32_t tgSfarsRegAddr     = XSPI_TG_REG_ADDR(base, tgId, TGSFARS);
+    uint32_t tgIpcrsRegAddr     = XSPI_TG_REG_ADDR(base, tgId, TGIPCRS);
+    uint32_t sfpTgIpcrRegAddr   = XSPI_TG_REG_ADDR_SFP_IPCR(base, tgId);
+    uint32_t sfpTgIpSfarRegAddr = XSPI_TG_REG_ADDR_SFP_SFAR(base, tgId);
+    uint32_t tgMdadRegAddr      = XSPI_TG_REG_ADDR_MDAD(base, tgId);
 
     bool mdadEnabled = false;
     bool mdadValid   = false;
     uint32_t tmp32   = 0UL;
 
+#if (defined(FSL_FEATURE_XSPI_HAS_EENV) && FSL_FEATURE_XSPI_HAS_EENV)
+    XSPI_ClearErrorStatusFlagsTG(base, tgId, kXSPI_ArbWinEventFlag);
+#else
     XSPI_ClearErrorStatusFlags(base, kXSPI_ArbWinEventFlag);
+#endif
     mdadEnabled = (bool)((base->MGC & XSPI_MGC_GVLDMDAD_MASK) != 0UL);
     mdadValid   = (((*(uint32_t *)tgMdadRegAddr) & XSPI_TG0MDAD_VLD_MASK) != 0UL);
     /* Check the selected target group queue is empty. */
@@ -1435,10 +1523,19 @@ RAMFUNC status_t XSPI_StartIpAccess(
     }
 
     /* Blocking until the IP request is granted. */
+#if (defined(FSL_FEATURE_XSPI_HAS_EENV) && FSL_FEATURE_XSPI_HAS_EENV)
+    while (XSPI_CheckIpRequestGrantedTG(base, tgId) == false)
+#else
     while (XSPI_CheckIpRequestGranted(base) == false)
+#endif
     {
     }
-    XSPI_ClearErrorStatusFlags(base, kXSPI_ArbWinEventFlag);
+#if (defined(FSL_FEATURE_XSPI_HAS_EENV) && FSL_FEATURE_XSPI_HAS_EENV)
+    XSPI_ClearErrorStatusFlagsTG(base, tgId,
+#else
+    XSPI_ClearErrorStatusFlags(base,
+#endif
+                                 kXSPI_ArbWinEventFlag);
 
     return kStatus_Success;
 }
@@ -1460,15 +1557,23 @@ RAMFUNC status_t XSPI_StartIpAccess(
 RAMFUNC status_t XSPI_StartIpAccessNonBlocking(
     XSPI_Type *base, uint32_t addr, uint8_t seqIndex, size_t byteSize, xspi_target_group_t tgId, bool lockArbitration)
 {
-    uint32_t tgSfarsRegAddr     = (uint32_t)base + (uint32_t)s_tgSfarsRegOffset[(uint8_t)tgId];
-    uint32_t sfpTgIpcrRegAddr   = (uint32_t)base + (uint32_t)s_sfpTgIpcrRegOffset[(uint8_t)tgId];
-    uint32_t sfpTgIpSfarRegAddr = (uint32_t)base + (uint32_t)s_sfpTgIpSfarRegOffset[(uint8_t)tgId];
-    uint32_t tgMdadRegAddr      = (uint32_t)base + (uint32_t)s_tgMdadRegOffset[(uint8_t)tgId];
+    uint32_t tgSfarsRegAddr     = XSPI_TG_REG_ADDR(base, tgId, TGSFARS);
+    uint32_t sfpTgIpcrRegAddr   = XSPI_TG_REG_ADDR_SFP_IPCR(base, tgId);
+    uint32_t sfpTgIpSfarRegAddr = XSPI_TG_REG_ADDR_SFP_SFAR(base, tgId);
+    uint32_t tgMdadRegAddr      = XSPI_TG_REG_ADDR_MDAD(base, tgId);
+#if (defined(FSL_FEATURE_XSPI_HAS_EENV) && FSL_FEATURE_XSPI_HAS_EENV)
+    uint32_t tgIntEnRegAddr = XSPI_TG_REG_ADDR_INT_EN(base, tgId);
+#endif
 
     bool mdadEnabled = false;
     bool mdadValid   = false;
 
-    XSPI_ClearErrorStatusFlags(base, kXSPI_ArbWinEventFlag);
+#if (defined(FSL_FEATURE_XSPI_HAS_EENV) && FSL_FEATURE_XSPI_HAS_EENV)
+    XSPI_ClearErrorStatusFlagsTG(base, tgId,
+#else
+    XSPI_ClearErrorStatusFlags(base,
+#endif
+                                 kXSPI_ArbWinEventFlag);
     mdadEnabled = (bool)((base->MGC & XSPI_MGC_GVLDMDAD_MASK) != 0UL);
     mdadValid   = (((*(uint32_t *)tgMdadRegAddr) & XSPI_TG0MDAD_VLD_MASK) != 0UL);
 
@@ -1479,6 +1584,9 @@ RAMFUNC status_t XSPI_StartIpAccessNonBlocking(
 
     if (mdadEnabled && mdadValid)
     {
+#if (defined(FSL_FEATURE_XSPI_HAS_EENV) && FSL_FEATURE_XSPI_HAS_EENV)
+        (*(uint32_t *)tgIntEnRegAddr) |= XSPI_INT_EN_TG0SFAR_MASK | XSPI_INT_EN_TG0IPCR_MASK;
+#else
         if (tgId == kXSPI_TargetGroup0)
         {
             XSPI_EnableInterrupts(base, (uint64_t)(kXSPI_Tg0SfarErrIntEnable | kXSPI_Tg0IpcrErrIntEnable));
@@ -1487,6 +1595,7 @@ RAMFUNC status_t XSPI_StartIpAccessNonBlocking(
         {
             XSPI_EnableInterrupts(base, (uint64_t)(kXSPI_Tg1SfarErrIntEnable | kXSPI_Tg1IpcrErrIntEnable));
         }
+#endif
     }
 
     /* Set target address. */
@@ -1497,6 +1606,9 @@ RAMFUNC status_t XSPI_StartIpAccessNonBlocking(
 
     if (mdadEnabled && mdadValid)
     {
+#if (defined(FSL_FEATURE_XSPI_HAS_EENV) && FSL_FEATURE_XSPI_HAS_EENV)
+        (*(uint32_t *)tgIntEnRegAddr) &= ~XSPI_INT_EN_TG0SFAR_MASK | XSPI_INT_EN_TG0IPCR_MASK;
+#else
         if (tgId == kXSPI_TargetGroup0)
         {
             XSPI_DisableInterrupts(base, (uint64_t)(kXSPI_Tg0SfarErrIntEnable | kXSPI_Tg0SfarErrIntEnable));
@@ -1505,19 +1617,26 @@ RAMFUNC status_t XSPI_StartIpAccessNonBlocking(
         {
             XSPI_DisableInterrupts(base, (uint64_t)(kXSPI_Tg1SfarErrIntEnable | kXSPI_Tg1SfarErrIntEnable));
         }
+#endif
 
         if (g_IpAccessIpcrFail)
         {
+            g_IpAccessIpcrFail = false;
             return kStatus_XSPI_IpAccessIPCRInvalid;
         }
 
         if (g_IpAccessSfarFail)
         {
+            g_IpAccessIpcrFail = false;
             return kStatus_XSPI_IpAccessAddrSettingInvalid;
         }
     }
 
+#if (defined(FSL_FEATURE_XSPI_HAS_EENV) && FSL_FEATURE_XSPI_HAS_EENV)
+    XSPI_EnableInterruptsTG(base, tgId, (uint64_t)(kXSPI_ArbitrationWinIntEnable));
+#else
     XSPI_EnableInterrupts(base, (uint64_t)(kXSPI_ArbitrationWinIntEnable));
+#endif
 
     return kStatus_Success;
 }
@@ -1554,195 +1673,6 @@ RAMFUNC status_t XSPI_SetIpAccessConfig(XSPI_Type *base, xspi_ip_access_config_t
 }
 
 /*!
- * brief Sends a buffer of data bytes using blocking method.
- * note This function blocks via polling until all bytes have been sent.
- * param base XSPI peripheral base address
- * param buffer The data bytes to send
- * param size The number of data bytes to send
- * retval kStatus_Success write success without error
- * retval kStatus_XSPI_SequenceExecutionTimeout sequence execution timeout
- * retval kStatus_XSPI_IpCommandSequenceError IP command sequence error detected
- * retval kStatus_XSPI_IpCommandGrantTimeout IP command grant timeout detected
- */
-RAMFUNC status_t XSPI_WriteBlocking(XSPI_Type *base, uint8_t *buffer, size_t size)
-{
-    status_t result = kStatus_Success;
-    uint32_t i      = 0;
-
-    /* Blocking until TX buffer is unlocked. */
-    while (XSPI_CheckTxBuffLockOpen(base) == false)
-    {
-    }
-
-    base->TBCT = 256UL - ((uint32_t)size / 4UL - 1UL);
-    /* Send data buffer */
-    while (0U != size)
-    {
-        result = XSPI_CheckAndClearError(base, base->ERRSTAT);
-
-        if (kStatus_Success != result)
-        {
-            return result;
-        }
-
-        /* Write watermark level data into tx fifo . */
-        /* Write word aligned data into tx fifo. */
-        for (i = 0U; i < (size / 4U); i++)
-        {
-            while (1UL == ((base->SR & XSPI_SR_TXFULL_MASK) >> XSPI_SR_TXFULL_SHIFT))
-            {
-            }
-            base->TBDR = *(uint32_t *)buffer;
-            buffer += 4U;
-        }
-
-        /* Adjust size by the amount processed. */
-        size -= 4U * i;
-
-        /* Write word un-aligned data into tx fifo. */
-        if (0x00U != size)
-        {
-            uint32_t tempVal = 0x00U;
-
-            for (uint32_t j = 0U; j < size; j++)
-            {
-                tempVal |= ((uint32_t)*buffer++ << (8U * j));
-            }
-
-            while (1UL == ((base->SR & XSPI_SR_TXFULL_MASK) >> XSPI_SR_TXFULL_SHIFT))
-            {
-            }
-            base->TBDR = tempVal;
-        }
-
-        size = 0U;
-    }
-
-    /*clear TX Buffer Fill Flag*/
-    base->FR = XSPI_FR_TBFF_MASK;
-
-    while (XSPI_CheckIPAccessAsserted(base))
-    {
-    }
-
-    return result;
-}
-
-/*!
- * brief Receives a buffer of data bytes using a blocking method.
- * note This function blocks via polling until all bytes have been sent.
- * param base XSPI peripheral base address
- * param buffer The data bytes to send
- * param size The number of data bytes to receive
- * retval kStatus_Success read success without error
- * retval kStatus_XSPI_SequenceExecutionTimeout sequence execution timeout
- * retval kStatus_XSPI_IpCommandSequenceError IP command sequence error detected
- * retval kStatus_XSPI_IpCommandGrantTimeout IP command grant timeout detected
- */
-RAMFUNC status_t XSPI_ReadBlocking(XSPI_Type *base, uint8_t *buffer, size_t size)
-{
-    assert(size <= XSPI_IP_RX_BUFFER_SIZE);
-
-    uint32_t rxWatermark    = base->RBCT + 1UL;
-    status_t status         = kStatus_Success;
-    uint32_t i              = 0UL;
-    uint32_t removedCount   = 0UL;
-    uint32_t pollingBitMask = XSPI_SR_RXWE_MASK;
-
-    if (XSPI_CheckFSMValid(base) == false)
-    {
-        XSPI_ClearRxBuffer(base);
-        return kStatus_NoTransferInProgress;
-    }
-
-    if (size == XSPI_IP_RX_BUFFER_SIZE)
-    {
-        pollingBitMask = XSPI_SR_RXFULL_MASK;
-    }
-
-    while ((1UL != (base->SR & XSPI_SR_BUSY_MASK)) &&
-           (((base->SR & XSPI_SR_IP_ACC_MASK) >> XSPI_SR_IP_ACC_SHIFT) != 0UL))
-    {
-    }
-
-    /* Loop until Rx buffer watermark exceeded status asserted. */
-    while ((base->SR & pollingBitMask) == 0UL)
-    {
-        if ((base->ERRSTAT & XSPI_ERRSTAT_TO_ERR_MASK) != 0UL)
-        {
-            XSPI_ClearRxBuffer(base);
-            base->ERRSTAT = XSPI_ERRSTAT_TO_ERR_MASK;
-            return kStatus_Timeout;
-        }
-    }
-
-    uint32_t adjuestedSize = size + (4UL - size % 4UL) % 4UL;
-
-    if (XSPI_GetRxBufferAvailableBytesCount(base) != adjuestedSize)
-    {
-        XSPI_ClearRxBuffer(base);
-        return kStatus_XSPI_RxBufferEntriesCountError;
-    }
-    /* Send data buffer */
-    while (0UL != size)
-    {
-        status = XSPI_CheckAndClearError(base, base->ERRSTAT);
-
-        if (kStatus_Success != status)
-        {
-            break;
-        }
-
-        /* Read word aligned data from rx fifo. */
-        if (size >= 4UL * rxWatermark)
-        {
-            removedCount = XSPI_GetRxBufferRemovedBytesCount(base);
-            for (i = 0UL; i < rxWatermark; i++)
-            {
-                *(uint32_t *)buffer = base->RBDR[i];
-                buffer += 4UL;
-            }
-
-            /* RX buffer POP, trigger RX pop event. */
-            XSPI_TriggerRxBufferPopEvent(base);
-            while ((XSPI_GetRxBufferRemovedBytesCount(base) - removedCount) != (rxWatermark * 4UL))
-            {
-            }
-            size = size - 4UL * rxWatermark;
-        }
-        else
-        {
-            for (i = 0UL; i < (size / 4UL); i++)
-            {
-                *(uint32_t *)buffer = base->RBDR[i];
-                buffer += 4UL;
-            }
-
-            /* Adjust size by the amount processed. */
-            size -= 4UL * i;
-
-            /* Read word un-aligned data from rx fifo. */
-            if (0UL != size)
-            {
-                uint32_t tempVal = base->RBDR[i];
-
-                for (i = 0U; i < size; i++)
-                {
-                    *buffer++ = ((uint8_t)(tempVal >> (8U * i)) & 0xFFU);
-                }
-            }
-
-            size = 0UL;
-        }
-    }
-
-    /* Clear Rx buffer after all entries are read out. */
-    XSPI_ClearRxBuffer(base);
-
-    return status;
-}
-
-/*!
  * brief Execute command to transfer a buffer data bytes using a blocking method.
  * param base XSPI peripheral base address
  * param xfer pointer to the transfer structure.
@@ -1753,11 +1683,12 @@ RAMFUNC status_t XSPI_ReadBlocking(XSPI_Type *base, uint8_t *buffer, size_t size
  */
 RAMFUNC status_t XSPI_TransferBlocking(XSPI_Type *base, xspi_transfer_t *xfer)
 {
-    status_t status       = kStatus_Success;
-    uint32_t dataSize     = xfer->dataSize;
-    uint8_t *ptrBuffer    = (uint8_t *)xfer->data;
-    uint32_t transferSize = 0UL;
-    uint32_t addr         = xfer->deviceAddress;
+    status_t status        = kStatus_Success;
+    uint32_t dataSize      = xfer->dataSize;
+    uint8_t *ptrBuffer     = (uint8_t *)xfer->data;
+    uint32_t transferSize  = 0UL;
+    uint32_t addr          = xfer->deviceAddress;
+    __IO uint32_t *errstat = (__IO uint32_t *)XSPI_TG_REG_ADDR(base, xfer->targetGroup, ERRSTAT);
 
     if ((xfer->cmdType == kXSPI_Write) || (xfer->cmdType == kXSPI_Config))
     {
@@ -1780,9 +1711,18 @@ RAMFUNC status_t XSPI_TransferBlocking(XSPI_Type *base, xspi_transfer_t *xfer)
             }
 
             /* Clear TX buffer pointer. */
+#if (defined(FSL_FEATURE_XSPI_HAS_EENV) && FSL_FEATURE_XSPI_HAS_EENV)
+            XSPI_ClearTxBufferTG(base, xfer->targetGroup);
+#else
             XSPI_ClearTxBuffer(base);
+#endif
 
-            status = XSPI_WriteBlocking(base, ptrBuffer, transferSize);
+#if (defined(FSL_FEATURE_XSPI_HAS_EENV) && FSL_FEATURE_XSPI_HAS_EENV)
+            status = XSPI_WriteBlockingTG(base, xfer->targetGroup,
+#else
+            status = XSPI_WriteBlocking(base,
+#endif
+                                          ptrBuffer, transferSize);
             if (status != kStatus_Success)
             {
                 return status;
@@ -1801,7 +1741,11 @@ RAMFUNC status_t XSPI_TransferBlocking(XSPI_Type *base, xspi_transfer_t *xfer)
         uint32_t rxBufferWaterMark = 0UL;
         while (dataSize > 0UL)
         {
+#if (defined(FSL_FEATURE_XSPI_HAS_EENV) && FSL_FEATURE_XSPI_HAS_EENV)
+            XSPI_ClearRxBufferTG(base, xfer->targetGroup);
+#else
             XSPI_ClearRxBuffer(base);
+#endif
 
             /* calculate watermark and transfer size based on data size. */
             if (dataSize >= XSPI_IP_RX_BUFFER_SIZE)
@@ -1836,17 +1780,30 @@ RAMFUNC status_t XSPI_TransferBlocking(XSPI_Type *base, xspi_transfer_t *xfer)
                 }
                 transferSize = dataSize;
             }
+#if (defined(FSL_FEATURE_XSPI_HAS_EENV) && FSL_FEATURE_XSPI_HAS_EENV)
+            (void)XSPI_UpdateRxBufferWaterMarkTG(base, xfer->targetGroup, rxBufferWaterMark);
+#else
             (void)XSPI_UpdateRxBufferWaterMark(base, rxBufferWaterMark);
+#endif
 
             status = XSPI_StartIpAccess(base, addr, xfer->seqIndex, transferSize, xfer->targetGroup, false);
             if (status != kStatus_Success)
             {
                 return status;
             }
-            status = XSPI_ReadBlocking(base, ptrBuffer, transferSize);
+#if (defined(FSL_FEATURE_XSPI_HAS_EENV) && FSL_FEATURE_XSPI_HAS_EENV)
+            status = XSPI_ReadBlockingTG(base, xfer->targetGroup,
+#else
+            status = XSPI_ReadBlocking(base,
+#endif
+                                         ptrBuffer, transferSize);
             if (status == kStatus_Timeout)
             {
+#if (defined(FSL_FEATURE_XSPI_HAS_EENV) && FSL_FEATURE_XSPI_HAS_EENV)
+                XSPI_ResetTgQueueTG(base, xfer->targetGroup);
+#else
                 XSPI_ResetTgQueue(base);
+#endif
                 XSPI_ResetSfmAndAhbDomain(base);
                 break;
             }
@@ -1876,11 +1833,268 @@ RAMFUNC status_t XSPI_TransferBlocking(XSPI_Type *base, xspi_transfer_t *xfer)
 
     if (xfer->cmdType == kXSPI_Command)
     {
-        status = XSPI_CheckAndClearError(base, base->ERRSTAT);
+#if (defined(FSL_FEATURE_XSPI_HAS_EENV) && FSL_FEATURE_XSPI_HAS_EENV)
+        status = XSPI_CheckAndClearErrorTG(base, xfer->targetGroup,
+#else
+        status = XSPI_CheckAndClearError(base,
+#endif
+                                           *errstat);
         while (XSPI_CheckIPAccessAsserted(base))
         {
         }
     }
+
+    return status;
+}
+
+/*!
+ * brief Sends a buffer of data bytes using blocking method.
+ * note This function blocks via polling until all bytes have been sent.
+ * param base XSPI peripheral base address
+ * param buffer The data bytes to send
+ * param size The number of data bytes to send
+ * retval kStatus_Success write success without error
+ * retval kStatus_XSPI_SequenceExecutionTimeout sequence execution timeout
+ * retval kStatus_XSPI_IpCommandSequenceError IP command sequence error detected
+ * retval kStatus_XSPI_IpCommandGrantTimeout IP command grant timeout detected
+ */
+RAMFUNC status_t XSPI_WriteBlockingTG(XSPI_Type *base, xspi_target_group_t tgId, uint8_t *buffer, size_t size)
+{
+    __IO uint32_t *tbdr    = (__IO uint32_t *)XSPI_TG_REG_ADDR(base, tgId, TBDR);
+    __I uint32_t *sr       = (__I uint32_t *)XSPI_TG_REG_ADDR(base, tgId, SR);
+    __IO uint32_t *tbct    = (__IO uint32_t *)XSPI_TG_REG_ADDR(base, tgId, TBCT);
+    __IO uint32_t *fr      = (__IO uint32_t *)XSPI_TG_REG_ADDR(base, tgId, FR);
+    __IO uint32_t *errstat = (__IO uint32_t *)XSPI_TG_REG_ADDR(base, tgId, ERRSTAT);
+
+    status_t result = kStatus_Success;
+    uint32_t i      = 0;
+
+    /* Blocking until TX buffer is unlocked. */
+#if (defined(FSL_FEATURE_XSPI_HAS_EENV) && FSL_FEATURE_XSPI_HAS_EENV)
+    while (XSPI_CheckTxBuffLockOpenTG(base, tgId) == false)
+#else
+    while (XSPI_CheckTxBuffLockOpen(base) == false)
+#endif
+    {
+    }
+
+    *tbct = 256UL - ((uint32_t)size / 4UL - 1UL);
+    /* Send data buffer */
+    while (0U != size)
+    {
+#if (defined(FSL_FEATURE_XSPI_HAS_EENV) && FSL_FEATURE_XSPI_HAS_EENV)
+        result = XSPI_CheckAndClearErrorTG(base, tgId, *errstat);
+#else
+        result = XSPI_CheckAndClearError(base, *errstat);
+#endif
+
+        if (kStatus_Success != result)
+        {
+            return result;
+        }
+
+        /* Write watermark level data into tx fifo . */
+        /* Write word aligned data into tx fifo. */
+        for (i = 0U; i < (size / 4U); i++)
+        {
+            while (1UL == (((*sr) & XSPI_SR_TXFULL_MASK) >> XSPI_SR_TXFULL_SHIFT))
+            {
+            }
+            *tbdr = *(uint32_t *)buffer;
+            buffer += 4U;
+        }
+
+        /* Adjust size by the amount processed. */
+        size -= 4U * i;
+
+        /* Write word un-aligned data into tx fifo. */
+        if (0x00U != size)
+        {
+            uint32_t tempVal = 0x00U;
+
+            for (uint32_t j = 0U; j < size; j++)
+            {
+                tempVal |= ((uint32_t)*buffer++ << (8U * j));
+            }
+
+            while (1UL == (((*sr) & XSPI_SR_TXFULL_MASK) >> XSPI_SR_TXFULL_SHIFT))
+            {
+            }
+            *tbdr = tempVal;
+        }
+
+        size = 0U;
+    }
+
+    /*clear TX Buffer Fill Flag*/
+    *fr = XSPI_FR_TBFF_MASK;
+
+#if (defined(FSL_FEATURE_XSPI_HAS_EENV) && FSL_FEATURE_XSPI_HAS_EENV)
+    while (XSPI_CheckIPAccessAssertedTG(base, tgId))
+#else
+    while (XSPI_CheckIPAccessAsserted(base))
+#endif
+    {
+    }
+
+    return result;
+}
+
+/*!
+ * brief Receives a buffer of data bytes using a blocking method.
+ * note This function blocks via polling until all bytes have been sent.
+ * param base XSPI peripheral base address
+ * param buffer The data bytes to send
+ * param size The number of data bytes to receive
+ * retval kStatus_Success read success without error
+ * retval kStatus_XSPI_SequenceExecutionTimeout sequence execution timeout
+ * retval kStatus_XSPI_IpCommandSequenceError IP command sequence error detected
+ * retval kStatus_XSPI_IpCommandGrantTimeout IP command grant timeout detected
+ */
+RAMFUNC status_t XSPI_ReadBlockingTG(XSPI_Type *base, xspi_target_group_t tgId, uint8_t *buffer, size_t size)
+{
+    assert(size <= XSPI_IP_RX_BUFFER_SIZE);
+
+    __I uint32_t *rbdr     = (__I uint32_t *)XSPI_TG_REG_ADDR_RBDR(base, tgId);
+    __IO uint32_t *rbct    = (__IO uint32_t *)XSPI_TG_REG_ADDR(base, tgId, RBCT);
+    __I uint32_t *sr       = (__I uint32_t *)XSPI_TG_REG_ADDR(base, tgId, SR);
+    __IO uint32_t *errstat = (__IO uint32_t *)XSPI_TG_REG_ADDR(base, tgId, ERRSTAT);
+
+    uint32_t rxWatermark    = *rbct + 1UL;
+    status_t status         = kStatus_Success;
+    uint32_t i              = 0UL;
+    uint32_t removedCount   = 0UL;
+    uint32_t pollingBitMask = XSPI_SR_RXWE_MASK;
+
+#if (defined(FSL_FEATURE_XSPI_HAS_EENV) && FSL_FEATURE_XSPI_HAS_EENV)
+    if (XSPI_CheckFSMValidTG(base, tgId) == false)
+    {
+        XSPI_ClearRxBufferTG(base, tgId);
+        return kStatus_NoTransferInProgress;
+    }
+#else
+    if (XSPI_CheckFSMValid(base) == false)
+    {
+        XSPI_ClearRxBuffer(base);
+        return kStatus_NoTransferInProgress;
+    }
+#endif
+
+    if (size == XSPI_IP_RX_BUFFER_SIZE)
+    {
+        pollingBitMask = XSPI_SR_RXFULL_MASK;
+    }
+
+    while ((1UL != ((*sr) & XSPI_SR_BUSY_MASK)) && ((((*sr) & XSPI_SR_IP_ACC_MASK) >> XSPI_SR_IP_ACC_SHIFT) != 0UL))
+    {
+    }
+
+    /* Loop until Rx buffer watermark exceeded status asserted. */
+    while (((*sr) & pollingBitMask) == 0UL)
+    {
+        if (((*errstat) & XSPI_ERRSTAT_TO_ERR_MASK) != 0UL)
+        {
+#if (defined(FSL_FEATURE_XSPI_HAS_EENV) && FSL_FEATURE_XSPI_HAS_EENV)
+            XSPI_ClearRxBufferTG(base, tgId);
+#else
+            XSPI_ClearRxBuffer(base);
+#endif
+            (*errstat) = XSPI_ERRSTAT_TO_ERR_MASK;
+            return kStatus_Timeout;
+        }
+    }
+
+    uint32_t adjuestedSize = size + (4UL - size % 4UL) % 4UL;
+
+#if (defined(FSL_FEATURE_XSPI_HAS_EENV) && FSL_FEATURE_XSPI_HAS_EENV)
+    if (XSPI_GetRxBufferAvailableBytesCountTG(base, tgId) != adjuestedSize)
+    {
+        XSPI_ClearRxBufferTG(base, tgId);
+        return kStatus_XSPI_RxBufferEntriesCountError;
+    }
+#else
+    if (XSPI_GetRxBufferAvailableBytesCount(base) != adjuestedSize)
+    {
+        XSPI_ClearRxBuffer(base);
+        return kStatus_XSPI_RxBufferEntriesCountError;
+    }
+#endif
+
+    /* Send data buffer */
+    while (0UL != size)
+    {
+#if (defined(FSL_FEATURE_XSPI_HAS_EENV) && FSL_FEATURE_XSPI_HAS_EENV)
+        status = XSPI_CheckAndClearErrorTG(base, tgId, (*errstat));
+#else
+        status = XSPI_CheckAndClearError(base, (*errstat));
+#endif
+
+        if (kStatus_Success != status)
+        {
+            break;
+        }
+
+        /* Read word aligned data from rx fifo. */
+        if (size >= 4UL * rxWatermark)
+        {
+#if (defined(FSL_FEATURE_XSPI_HAS_EENV) && FSL_FEATURE_XSPI_HAS_EENV)
+            removedCount = XSPI_GetRxBufferRemovedBytesCountTG(base, tgId);
+#else
+            removedCount = XSPI_GetRxBufferRemovedBytesCount(base);
+#endif
+            for (i = 0UL; i < rxWatermark; i++)
+            {
+                *(uint32_t *)buffer = rbdr[i];
+                buffer += 4UL;
+            }
+
+            /* RX buffer POP, trigger RX pop event. */
+
+#if (defined(FSL_FEATURE_XSPI_HAS_EENV) && FSL_FEATURE_XSPI_HAS_EENV)
+            XSPI_TriggerRxBufferPopEventTG(base, tgId);
+            while ((XSPI_GetRxBufferRemovedBytesCountTG(base, tgId) - removedCount) != (rxWatermark * 4UL))
+            {
+            }
+#else
+            XSPI_TriggerRxBufferPopEvent(base);
+            while ((XSPI_GetRxBufferRemovedBytesCount(base) - removedCount) != (rxWatermark * 4UL))
+            {
+            }
+#endif
+            size = size - 4UL * rxWatermark;
+        }
+        else
+        {
+            for (i = 0UL; i < (size / 4UL); i++)
+            {
+                *(uint32_t *)buffer = rbdr[i];
+                buffer += 4UL;
+            }
+
+            /* Adjust size by the amount processed. */
+            size -= 4UL * i;
+
+            /* Read word un-aligned data from rx fifo. */
+            if (0UL != size)
+            {
+                uint32_t tempVal = rbdr[i];
+
+                for (i = 0U; i < size; i++)
+                {
+                    *buffer++ = ((uint8_t)(tempVal >> (8U * i)) & 0xFFU);
+                }
+            }
+
+            size = 0UL;
+        }
+    }
+
+    /* Clear Rx buffer after all entries are read out. */
+#if (defined(FSL_FEATURE_XSPI_HAS_EENV) && FSL_FEATURE_XSPI_HAS_EENV)
+    XSPI_ClearRxBufferTG(base, tgId);
+#else
+    XSPI_ClearRxBuffer(base);
+#endif
 
     return status;
 }
@@ -1892,11 +2106,17 @@ RAMFUNC status_t XSPI_TransferBlocking(XSPI_Type *base, xspi_transfer_t *xfer)
  * param handle pointer to xspi_handle_t structure to store the transfer state.
  * param callback pointer to user callback function.
  * param userData user parameter passed to the callback function.
+ * param targetGroup target group ID for this handle.
  */
 RAMFUNC void XSPI_TransferCreateHandle(XSPI_Type *base,
                                        xspi_handle_t *handle,
                                        xspi_transfer_callback_t callback,
-                                       void *userData)
+                                       void *userData
+#if (defined(FSL_FEATURE_XSPI_HAS_EENV) && FSL_FEATURE_XSPI_HAS_EENV)
+                                       ,
+                                       xspi_target_group_t targetGroup
+#endif
+)
 {
     assert(NULL != handle);
 
@@ -1909,12 +2129,24 @@ RAMFUNC void XSPI_TransferCreateHandle(XSPI_Type *base,
     handle->completionCallback = callback;
     handle->userData           = userData;
 
+#if (defined(FSL_FEATURE_XSPI_HAS_EENV) && FSL_FEATURE_XSPI_HAS_EENV)
+    handle->tgId = targetGroup;
+    (void)EnableIRQ(s_xspiIrqs[instance][targetGroup]);
+
+#if defined(FSL_DRIVER_TRANSFER_DOUBLE_WEAK_IRQ) && FSL_DRIVER_TRANSFER_DOUBLE_WEAK_IRQ
+    s_xspiHandle[instance][targetGroup] = handle;
+#endif
+
+#else /* (defined(FSL_FEATURE_XSPI_HAS_EENV) && FSL_FEATURE_XSPI_HAS_EENV) */
+
     /* Enable NVIC interrupt. */
     (void)EnableIRQ(s_xspiIrqs[instance]);
 
 #if defined(FSL_DRIVER_TRANSFER_DOUBLE_WEAK_IRQ) && FSL_DRIVER_TRANSFER_DOUBLE_WEAK_IRQ
     s_xspiHandle[instance] = handle;
 #endif
+
+#endif /* (defined(FSL_FEATURE_XSPI_HAS_EENV) && FSL_FEATURE_XSPI_HAS_EENV) */
 }
 
 /*!
@@ -2024,8 +2256,13 @@ RAMFUNC void XSPI_TransferAbort(XSPI_Type *base, xspi_handle_t *handle)
 {
     assert(NULL != handle);
 
+#if (defined(FSL_FEATURE_XSPI_HAS_EENV) && FSL_FEATURE_XSPI_HAS_EENV)
+    XSPI_DisableInterruptsTG(
+        base, handle->tgId,
+#else
     XSPI_DisableInterrupts(
         base,
+#endif
         (uint64_t)(kXSPI_RxBufferDrainIntEnable | kXSPI_RxBufferOverflowIntEnable | kXSPI_TimeoutErrIntEnable |
                    kXSPI_IpCmdTrigFailErrorIntEnable | kXSPI_TxBufferFillIntEnable | kXSPI_TxBufferUnderrunIntEnable |
                    kXSPI_TimeoutErrIntEnable | kXSPI_IpCmdTrigFailErrorIntEnable | kXSPI_ArbitrationWinIntEnable));
@@ -2061,19 +2298,10 @@ RAMFUNC void XSPI_TransferAbort(XSPI_Type *base, xspi_handle_t *handle)
 RAMFUNC status_t XSPI_SetAhbAccessBoundary(XSPI_Type *base, xspi_ahb_alignment_t alignment)
 {
 #if defined(XSPI_BFGENCR_ALIGN_MASK)
-    if (XSPI_CheckAhbReadAccessAsserted(base))
+    status_t result = XSPI_CheckAccessConditions(base);
+    if (result != kStatus_Success)
     {
-        return kStatus_XSPI_AhbReadAccessAsserted;
-    }
-
-    if (XSPI_CheckAhbWriteAccessAsserted(base))
-    {
-        return kStatus_XSPI_AhbWriteAccessAsserted;
-    }
-
-    if (XSPI_CheckGlobalConfigLocked(base))
-    {
-        return kStatus_XSPI_RegWriteLocked;
+        return result;
     }
 
     base->BFGENCR = ((base->BFGENCR & ~(XSPI_BFGENCR_ALIGN_MASK)) | XSPI_BFGENCR_ALIGN(alignment));
@@ -2094,19 +2322,10 @@ RAMFUNC status_t XSPI_SetAhbAccessBoundary(XSPI_Type *base, xspi_ahb_alignment_t
  */
 RAMFUNC status_t XSPI_SetAhbReadDataSeqId(XSPI_Type *base, uint8_t seqId)
 {
-    if (XSPI_CheckAhbReadAccessAsserted(base))
+    status_t result = XSPI_CheckAccessConditions(base);
+    if (result != kStatus_Success)
     {
-        return kStatus_XSPI_AhbReadAccessAsserted;
-    }
-
-    if (XSPI_CheckAhbWriteAccessAsserted(base))
-    {
-        return kStatus_XSPI_AhbWriteAccessAsserted;
-    }
-
-    if (XSPI_CheckGlobalConfigLocked(base))
-    {
-        return kStatus_XSPI_RegWriteLocked;
+        return result;
     }
 
     base->BFGENCR = ((base->BFGENCR & (~XSPI_BFGENCR_SEQID_MASK)) | XSPI_BFGENCR_SEQID(seqId));
@@ -2126,19 +2345,10 @@ RAMFUNC status_t XSPI_SetAhbReadDataSeqId(XSPI_Type *base, uint8_t seqId)
  */
 RAMFUNC status_t XSPI_SetAhbWriteDataSeqId(XSPI_Type *base, uint8_t seqId)
 {
-    if (XSPI_CheckAhbReadAccessAsserted(base))
+    status_t result = XSPI_CheckAccessConditions(base);
+    if (result != kStatus_Success)
     {
-        return kStatus_XSPI_AhbReadAccessAsserted;
-    }
-
-    if (XSPI_CheckAhbWriteAccessAsserted(base))
-    {
-        return kStatus_XSPI_AhbWriteAccessAsserted;
-    }
-
-    if (XSPI_CheckGlobalConfigLocked(base))
-    {
-        return kStatus_XSPI_RegWriteLocked;
+        return result;
     }
 
     base->BFGENCR = ((base->BFGENCR & (~XSPI_BFGENCR_SEQID_WR_MASK)) | XSPI_BFGENCR_SEQID_WR(seqId));
@@ -2273,19 +2483,10 @@ RAMFUNC status_t XSPI_SetAhbBufferConfig(XSPI_Type *base,
  */
 RAMFUNC status_t XSPI_SetAhbAccessSplitSize(XSPI_Type *base, xspi_ahb_split_size_t ahbSplitSize)
 {
-    if (XSPI_CheckAhbReadAccessAsserted(base))
+    status_t result = XSPI_CheckAccessConditions(base);
+    if (result != kStatus_Success)
     {
-        return kStatus_XSPI_AhbReadAccessAsserted;
-    }
-
-    if (XSPI_CheckAhbWriteAccessAsserted(base))
-    {
-        return kStatus_XSPI_AhbWriteAccessAsserted;
-    }
-
-    if (XSPI_CheckGlobalConfigLocked(base))
-    {
-        return kStatus_XSPI_RegWriteLocked;
+        return result;
     }
 
     if (ahbSplitSize == kXSPI_AhbSplitSizeDisabled)
@@ -2426,19 +2627,10 @@ RAMFUNC void XSPI_GetAhbRequestSuspendInfo(XSPI_Type *base, xspi_ahb_request_sus
  */
 RAMFUNC status_t XSPI_EnableAhbBufferWriteFlush(XSPI_Type *base, bool enable)
 {
-    if (XSPI_CheckAhbReadAccessAsserted(base))
+    status_t result = XSPI_CheckAccessConditions(base);
+    if (result != kStatus_Success)
     {
-        return kStatus_XSPI_AhbReadAccessAsserted;
-    }
-
-    if (XSPI_CheckAhbWriteAccessAsserted(base))
-    {
-        return kStatus_XSPI_AhbWriteAccessAsserted;
-    }
-
-    if (XSPI_CheckGlobalConfigLocked(base))
-    {
-        return kStatus_XSPI_RegWriteLocked;
+        return result;
     }
 
     if (enable)
@@ -2522,19 +2714,10 @@ RAMFUNC status_t XSPI_BlockAccessAfterAhbWrite(XSPI_Type *base, bool blockSequen
  */
 RAMFUNC status_t XSPI_SelectPPWFlagClearPolicy(XSPI_Type *base, xspi_ppw_flag_clear_policy_t policy)
 {
-    if (XSPI_CheckAhbReadAccessAsserted(base))
+    status_t result = XSPI_CheckAccessConditions(base);
+    if (result != kStatus_Success)
     {
-        return kStatus_XSPI_AhbReadAccessAsserted;
-    }
-
-    if (XSPI_CheckAhbWriteAccessAsserted(base))
-    {
-        return kStatus_XSPI_AhbWriteAccessAsserted;
-    }
-
-    if (XSPI_CheckGlobalConfigLocked(base))
-    {
-        return kStatus_XSPI_RegWriteLocked;
+        return result;
     }
 
     if (policy == kXSPI_HardwareClearPPWFlag)
@@ -2571,10 +2754,21 @@ RAMFUNC status_t XSPI_UpdatePageWaitTimeCounter(XSPI_Type *base, uint32_t countV
         return kStatus_XSPI_AhbWriteAccessAsserted;
     }
 
+#if (defined(FSL_FEATURE_XSPI_HAS_EENV) && FSL_FEATURE_XSPI_HAS_EENV)
+    for (uint8_t tgId = 0; tgId < XSPI_TARGET_GROUP_COUNT; tgId++)
+    {
+        __IO uint32_t *fr = (__IO uint32_t *)XSPI_TG_REG_ADDR(base, tgId, FR);
+        if (((*fr) & XSPI_FR_PPWF_MASK) != 0UL)
+        {
+            return kStatus_XSPI_PageProgramWaitFlagAsserted;
+        }
+    }
+#else
     if ((base->FR & XSPI_FR_PPWF_MASK) != 0UL)
     {
         return kStatus_XSPI_PageProgramWaitFlagAsserted;
     }
+#endif
 
     base->PPWF_TCNT = countValue;
 
@@ -2596,19 +2790,10 @@ RAMFUNC status_t XSPI_UpdatePageWaitTimeCounter(XSPI_Type *base, uint32_t countV
  */
 RAMFUNC status_t XSPI_SetAhbReadStatusRegSeqId(XSPI_Type *base, uint8_t seqId)
 {
-    if (XSPI_CheckAhbReadAccessAsserted(base))
+    status_t result = XSPI_CheckAccessConditions(base);
+    if (result != kStatus_Success)
     {
-        return kStatus_XSPI_AhbReadAccessAsserted;
-    }
-
-    if (XSPI_CheckAhbWriteAccessAsserted(base))
-    {
-        return kStatus_XSPI_AhbWriteAccessAsserted;
-    }
-
-    if (XSPI_CheckGlobalConfigLocked(base))
-    {
-        return kStatus_XSPI_RegWriteLocked;
+        return result;
     }
 
     base->BFGENCR = ((base->BFGENCR & (~XSPI_BFGENCR_SEQID_RDSR_MASK)) | XSPI_BFGENCR_SEQID_RDSR(seqId));
@@ -2641,10 +2826,21 @@ RAMFUNC status_t XSPI_SetSFMStatusRegInfo(XSPI_Type *base, xspi_device_status_re
         return kStatus_XSPI_AhbWriteAccessAsserted;
     }
 
+#if (defined(FSL_FEATURE_XSPI_HAS_EENV) && FSL_FEATURE_XSPI_HAS_EENV)
+    for (uint8_t tgId = 0; tgId < XSPI_TARGET_GROUP_COUNT; tgId++)
+    {
+        __IO uint32_t *fr = (__IO uint32_t *)XSPI_TG_REG_ADDR(base, tgId, FR);
+        if (((*fr) & XSPI_FR_PPWF_MASK) != 0UL)
+        {
+            return kStatus_XSPI_PageProgramWaitFlagAsserted;
+        }
+    }
+#else
     if ((base->FR & XSPI_FR_PPWF_MASK) != 0UL)
     {
         return kStatus_XSPI_PageProgramWaitFlagAsserted;
     }
+#endif
 
     uint32_t tmp32 = 0UL;
 
@@ -2759,19 +2955,10 @@ RAMFUNC status_t XSPI_SetAhbAccessConfig(XSPI_Type *base, xspi_ahb_access_config
 {
     assert(ptrAhbAccessConfig != NULL);
 
-    if (XSPI_CheckAhbReadAccessAsserted(base))
+    status_t result = XSPI_CheckAccessConditions(base);
+    if (result != kStatus_Success)
     {
-        return kStatus_XSPI_AhbReadAccessAsserted;
-    }
-
-    if (XSPI_CheckAhbWriteAccessAsserted(base))
-    {
-        return kStatus_XSPI_AhbWriteAccessAsserted;
-    }
-
-    if (XSPI_CheckGlobalConfigLocked(base))
-    {
-        return kStatus_XSPI_RegWriteLocked;
+        return result;
     }
 
     /* Configure AHB buffers. */
@@ -2850,8 +3037,19 @@ status_t XSPI_EnableAhbWriteTerminate(XSPI_Type *base, bool enable)
 #if defined(FSL_DRIVER_TRANSFER_DOUBLE_WEAK_IRQ) && FSL_DRIVER_TRANSFER_DOUBLE_WEAK_IRQ
 RAMFUNC static void XSPI_CommonIRQHandler(XSPI_Type *base, xspi_handle_t *handle)
 {
-    uint32_t errFlags    = XSPI_GetErrorStatusFlags(base);
-    uint32_t flags       = XSPI_GetCmdExecutionArbitrationStatusFlags(base);
+#if (defined(FSL_FEATURE_XSPI_HAS_EENV) && FSL_FEATURE_XSPI_HAS_EENV)
+    uint32_t errFlags = XSPI_GetErrorStatusFlagsTG(base, handle->tgId);
+    uint32_t flags    = XSPI_GetCmdExecutionArbitrationStatusFlagsTG(base, handle->tgId);
+#else
+    uint32_t errFlags = XSPI_GetErrorStatusFlags(base);
+    uint32_t flags    = XSPI_GetCmdExecutionArbitrationStatusFlags(base);
+    xspi_target_group_t tgId;
+    (void)tgId;
+#endif
+    __I uint32_t *rbdr   = (__I uint32_t *)XSPI_TG_REG_ADDR_RBDR(base, handle->tgId);
+    __IO uint32_t *rbct  = (__IO uint32_t *)XSPI_TG_REG_ADDR(base, handle->tgId, RBCT);
+    __IO uint32_t *tbdr  = (__IO uint32_t *)XSPI_TG_REG_ADDR(base, handle->tgId, TBDR);
+    __IO uint32_t *tbct  = (__IO uint32_t *)XSPI_TG_REG_ADDR(base, handle->tgId, TBCT);
     uint32_t i           = 0UL;
     uint32_t bufferIndex = 0UL;
     uint8_t *buffer      = NULL;
@@ -2860,26 +3058,53 @@ RAMFUNC static void XSPI_CommonIRQHandler(XSPI_Type *base, xspi_handle_t *handle
 
     if ((errFlags & (uint32_t)kXSPI_ErrorTimeout) != 0UL)
     {
+#if (defined(FSL_FEATURE_XSPI_HAS_EENV) && FSL_FEATURE_XSPI_HAS_EENV)
+        XSPI_DisableInterruptsTG(base, handle->tgId, (uint64_t)kXSPI_TimeoutErrIntEnable);
+        XSPI_ClearErrorStatusFlagsTG(base, handle->tgId, (uint32_t)kXSPI_ErrorTimeout);
+#else
         XSPI_DisableInterrupts(base, (uint64_t)kXSPI_TimeoutErrIntEnable);
         XSPI_ClearErrorStatusFlags(base, (uint32_t)kXSPI_ErrorTimeout);
+#endif
         XSPI_TransferAbort(base, handle);
+#if (defined(FSL_FEATURE_XSPI_HAS_EENV) && FSL_FEATURE_XSPI_HAS_EENV)
+        XSPI_ResetTgQueueTG(base, handle->tgId);
+#else
         XSPI_ResetTgQueue(base);
+#endif
         XSPI_ResetSfmAndAhbDomain(base);
         handle->completionCallback(base, handle, kStatus_Timeout, handle->userData);
     }
 
-    if ((errFlags & (uint32_t)(kXSPI_ErrorTg0Sfar | kXSPI_ErrorTg1Sfar)) != 0UL)
+#if (defined(FSL_FEATURE_XSPI_HAS_EENV) && FSL_FEATURE_XSPI_HAS_EENV)
+    if ((errFlags & (uint32_t)kXSPI_ErrorTg0Sfar) != 0UL)
+#else
+    if ((errFlags & ((uint32_t)kXSPI_ErrorTg0Sfar | (uint32_t)kXSPI_ErrorTg1Sfar)) != 0UL)
+#endif
     {
-        XSPI_DisableInterrupts(base, (uint64_t)(kXSPI_Tg0SfarErrIntEnable | kXSPI_Tg1SfarErrIntEnable));
-        XSPI_ClearErrorStatusFlags(base, (uint32_t)(kXSPI_ErrorTg0Sfar | kXSPI_ErrorTg1Sfar));
+#if (defined(FSL_FEATURE_XSPI_HAS_EENV) && FSL_FEATURE_XSPI_HAS_EENV)
+        XSPI_DisableInterruptsTG(base, handle->tgId, (uint64_t)kXSPI_Tg0SfarErrIntEnable);
+        XSPI_ClearErrorStatusFlagsTG(base, handle->tgId, (uint32_t)kXSPI_ErrorTg0Sfar);
+#else
+        XSPI_DisableInterrupts(base, ((uint64_t)kXSPI_Tg0SfarErrIntEnable | (uint64_t)kXSPI_Tg1SfarErrIntEnable));
+        XSPI_ClearErrorStatusFlags(base, ((uint32_t)kXSPI_ErrorTg0Sfar | (uint32_t)kXSPI_ErrorTg1Sfar));
+#endif
         g_IpAccessSfarFail = true;
         handle->completionCallback(base, handle, kStatus_XSPI_IpAccessAddrSettingInvalid, handle->userData);
     }
 
+#if (defined(FSL_FEATURE_XSPI_HAS_EENV) && FSL_FEATURE_XSPI_HAS_EENV)
+    if ((errFlags & (uint32_t)kXSPI_ErrorTg0Ipcr) != 0UL)
+#else
     if ((errFlags & (uint32_t)(kXSPI_ErrorTg0Ipcr | kXSPI_ErrorTg1Ipcr)) != 0UL)
+#endif
     {
+#if (defined(FSL_FEATURE_XSPI_HAS_EENV) && FSL_FEATURE_XSPI_HAS_EENV)
+        XSPI_DisableInterruptsTG(base, handle->tgId, (uint64_t)kXSPI_Tg0IpcrErrIntEnable);
+        XSPI_ClearErrorStatusFlagsTG(base, handle->tgId, (uint32_t)kXSPI_ErrorTg0Ipcr);
+#else
         XSPI_DisableInterrupts(base, (uint64_t)(kXSPI_Tg0IpcrErrIntEnable | kXSPI_Tg1IpcrErrIntEnable));
         XSPI_ClearErrorStatusFlags(base, (uint32_t)(kXSPI_ErrorTg0Ipcr | kXSPI_ErrorTg1Ipcr));
+#endif
         g_IpAccessIpcrFail = true;
         handle->completionCallback(base, handle, kStatus_XSPI_IpAccessIPCRInvalid, handle->userData);
     }
@@ -2887,35 +3112,51 @@ RAMFUNC static void XSPI_CommonIRQHandler(XSPI_Type *base, xspi_handle_t *handle
     if ((errFlags & kXSPI_ArbitrationWin) != 0UL)
     {
         handle->state = kXSPI_StateIpAccessGranted;
+#if (defined(FSL_FEATURE_XSPI_HAS_EENV) && FSL_FEATURE_XSPI_HAS_EENV)
+        XSPI_ClearErrorStatusFlagsTG(base, handle->tgId, (uint32_t)kXSPI_ArbitrationWin);
+        XSPI_DisableInterruptsTG(base, handle->tgId, (uint64_t)kXSPI_ArbitrationWinIntEnable);
+#else
         XSPI_ClearErrorStatusFlags(base, (uint32_t)kXSPI_ArbitrationWin);
         XSPI_DisableInterrupts(base, (uint64_t)kXSPI_ArbitrationWinIntEnable);
+#endif
         return;
     }
 
     if ((flags & (uint32_t)kXSPI_FlagTxBufferUnderRun) != 0UL)
     {
+#if (defined(FSL_FEATURE_XSPI_HAS_EENV) && FSL_FEATURE_XSPI_HAS_EENV)
+        XSPI_DisableInterruptsTG(base, handle->tgId, (uint64_t)(kXSPI_TxBufferUnderrunIntEnable));
+        XSPI_ClearCmdExecutionArbitrationStatusFlagsTG(base, handle->tgId, (uint32_t)kXSPI_FlagTxBufferUnderRun);
+#else
         XSPI_DisableInterrupts(base, (uint64_t)(kXSPI_TxBufferUnderrunIntEnable));
         XSPI_ClearCmdExecutionArbitrationStatusFlags(base, (uint32_t)kXSPI_FlagTxBufferUnderRun);
+#endif
         handle->completionCallback(base, handle, kStatus_XSPI_TxBufferUnderrun, handle->userData);
     }
 
     if (((flags & (uint32_t)kXSPI_FlagTxBufferFill) != 0UL) && (handle->state == kXSPI_StateBusyWrite))
     {
+#if (defined(FSL_FEATURE_XSPI_HAS_EENV) && FSL_FEATURE_XSPI_HAS_EENV)
+        XSPI_ClearCmdExecutionArbitrationStatusFlagsTG(base, handle->tgId, (uint32_t)kXSPI_FlagTxBufferFill);
+        XSPI_DisableInterruptsTG(base, handle->tgId, (uint64_t)kXSPI_TxBufferFillIntEnable);
+        XSPI_ClearTxBufferTG(base, handle->tgId);
+#else
         XSPI_ClearCmdExecutionArbitrationStatusFlags(base, (uint32_t)kXSPI_FlagTxBufferFill);
         XSPI_DisableInterrupts(base, (uint64_t)kXSPI_TxBufferFillIntEnable);
+        XSPI_ClearTxBuffer(base);
+#endif
         bufferIndex  = handle->transferTotalSize - handle->dataSize;
         buffer       = (uint8_t *)(handle->data) + bufferIndex;
         transferSize = handle->curTransferSize;
         handle->dataSize -= transferSize;
-        XSPI_ClearTxBuffer(base);
 
-        base->TBCT = 256UL - ((uint32_t)transferSize / 4UL - 1UL);
+        *tbct = 256UL - ((uint32_t)transferSize / 4UL - 1UL);
         while (transferSize != 0UL)
         {
             for (i = 0UL; i < (transferSize / 4U); i++)
             {
-                tmpVal     = *(uint32_t *)buffer;
-                base->TBDR = tmpVal;
+                tmpVal = *(uint32_t *)buffer;
+                *tbdr  = tmpVal;
                 buffer += 4U;
             }
 
@@ -2929,8 +3170,7 @@ RAMFUNC static void XSPI_CommonIRQHandler(XSPI_Type *base, xspi_handle_t *handle
                 {
                     tmpVal |= (uint32_t)*buffer++ << (8U * j);
                 }
-
-                base->TBDR = tmpVal;
+                *tbdr = tmpVal;
             }
             transferSize = 0UL;
         }
@@ -2938,7 +3178,7 @@ RAMFUNC static void XSPI_CommonIRQHandler(XSPI_Type *base, xspi_handle_t *handle
         handle->state = kXSPI_StateIdle;
         if (handle->dataSize != 0UL)
         {
-            XSPI_StartIpWriteNonBlocking(base, handle, handle->dataSize);
+            (void)XSPI_StartIpWriteNonBlocking(base, handle, handle->dataSize);
         }
         else
         {
@@ -2948,10 +3188,16 @@ RAMFUNC static void XSPI_CommonIRQHandler(XSPI_Type *base, xspi_handle_t *handle
 
     if (((flags & (uint32_t)kXSPI_FlagRxBufferWatermarkExceeded) != 0UL) && (handle->state == kXSPI_StateBusyRead))
     {
+#if (defined(FSL_FEATURE_XSPI_HAS_EENV) && FSL_FEATURE_XSPI_HAS_EENV)
+        XSPI_DisableInterruptsTG(base, handle->tgId, (uint64_t)kXSPI_RxBufferDrainIntEnable);
+        /* RX buffer watermark exceeded, read data to buffer and pop RX buffer. */
+        uint32_t rxDataSize = XSPI_GetRxBufferAvailableBytesCountTG(base, handle->tgId);
+#else
         XSPI_DisableInterrupts(base, (uint64_t)kXSPI_RxBufferDrainIntEnable);
         /* RX buffer watermark exceeded, read data to buffer and pop RX buffer. */
-        uint32_t rxDataSize        = XSPI_GetRxBufferAvailableBytesCount(base);
-        uint32_t rxBufferWaterMark = base->RBCT + 1UL;
+        uint32_t rxDataSize = XSPI_GetRxBufferAvailableBytesCount(base);
+#endif
+        uint32_t rxBufferWaterMark = *rbct + 1UL;
         bufferIndex                = handle->transferTotalSize - handle->dataSize;
         buffer                     = (uint8_t *)(handle->data) + bufferIndex;
 
@@ -2960,6 +3206,21 @@ RAMFUNC static void XSPI_CommonIRQHandler(XSPI_Type *base, xspi_handle_t *handle
         {
             if (rxDataSize >= 4UL * rxBufferWaterMark)
             {
+#if (defined(FSL_FEATURE_XSPI_HAS_EENV) && FSL_FEATURE_XSPI_HAS_EENV)
+                uint32_t removedCount = XSPI_GetRxBufferRemovedBytesCountTG(base, handle->tgId);
+                for (i = 0UL; i < rxBufferWaterMark; i++)
+                {
+                    *(uint32_t *)buffer = rbdr[i];
+                    buffer += 4UL;
+                }
+
+                XSPI_TriggerRxBufferPopEventTG(base, handle->tgId);
+
+                while ((XSPI_GetRxBufferRemovedBytesCountTG(base, handle->tgId) - removedCount) !=
+                       (rxBufferWaterMark * 4UL))
+                {
+                }
+#else
                 uint32_t removedCount = XSPI_GetRxBufferRemovedBytesCount(base);
                 for (i = 0UL; i < rxBufferWaterMark; i++)
                 {
@@ -2972,13 +3233,14 @@ RAMFUNC static void XSPI_CommonIRQHandler(XSPI_Type *base, xspi_handle_t *handle
                 while ((XSPI_GetRxBufferRemovedBytesCount(base) - removedCount) != (rxBufferWaterMark * 4UL))
                 {
                 }
+#endif
                 rxDataSize = rxDataSize - 4UL * rxBufferWaterMark;
             }
             else
             {
                 for (i = 0UL; i < (rxDataSize / 4UL); i++)
                 {
-                    *(uint32_t *)buffer = base->RBDR[i];
+                    *(uint32_t *)buffer = rbdr[i];
                     buffer += 4UL;
                 }
 
@@ -2986,7 +3248,7 @@ RAMFUNC static void XSPI_CommonIRQHandler(XSPI_Type *base, xspi_handle_t *handle
 
                 if (rxDataSize != 0UL)
                 {
-                    tmpVal = base->RBDR[i];
+                    tmpVal = rbdr[i];
 
                     for (i = 0U; i < rxDataSize; i++)
                     {
@@ -2996,11 +3258,16 @@ RAMFUNC static void XSPI_CommonIRQHandler(XSPI_Type *base, xspi_handle_t *handle
             }
         }
 
-        XSPI_ClearCmdExecutionArbitrationStatusFlags(base, kXSPI_FlagRxBufferWatermarkExceeded);
+#if (defined(FSL_FEATURE_XSPI_HAS_EENV) && FSL_FEATURE_XSPI_HAS_EENV)
+        XSPI_ClearCmdExecutionArbitrationStatusFlagsTG(base, handle->tgId,
+#else
+        XSPI_ClearCmdExecutionArbitrationStatusFlags(base,
+#endif
+                                                       kXSPI_FlagRxBufferWatermarkExceeded);
         handle->state = kXSPI_StateIdle;
         if (handle->dataSize != 0UL)
         {
-            XSPI_StartIpReadNonBlocking(base, handle, handle->dataSize);
+            (void)XSPI_StartIpReadNonBlocking(base, handle, handle->dataSize);
         }
         else
         {
@@ -3008,6 +3275,46 @@ RAMFUNC static void XSPI_CommonIRQHandler(XSPI_Type *base, xspi_handle_t *handle
         }
     }
 }
+
+#if (defined(FSL_FEATURE_XSPI_HAS_EENV) && FSL_FEATURE_XSPI_HAS_EENV)
+#if defined(XSPI1)
+void XSPI1_0_IRQHandler(void);
+void XSPI1_0_IRQHandler(void)
+{
+    XSPI_CommonIRQHandler(XSPI1, s_xspiHandle[1][0]);
+    SDK_ISR_EXIT_BARRIER;
+}
+
+void XSPI1_1_IRQHandler(void);
+void XSPI1_1_IRQHandler(void)
+{
+    XSPI_CommonIRQHandler(XSPI1, s_xspiHandle[1][1]);
+    SDK_ISR_EXIT_BARRIER;
+}
+
+void XSPI1_2_IRQHandler(void);
+void XSPI1_2_IRQHandler(void)
+{
+    XSPI_CommonIRQHandler(XSPI1, s_xspiHandle[1][2]);
+    SDK_ISR_EXIT_BARRIER;
+}
+
+void XSPI1_3_IRQHandler(void);
+void XSPI1_3_IRQHandler(void)
+{
+    XSPI_CommonIRQHandler(XSPI1, s_xspiHandle[1][3]);
+    SDK_ISR_EXIT_BARRIER;
+}
+
+void XSPI1_4_IRQHandler(void);
+void XSPI1_4_IRQHandler(void)
+{
+    XSPI_CommonIRQHandler(XSPI1, s_xspiHandle[1][4]);
+    SDK_ISR_EXIT_BARRIER;
+}
+#endif /* defined(XSPI1) */
+
+#else  /* defined(FSL_FEATURE_XSPI_HAS_EENV) && FSL_FEATURE_XSPI_HAS_EENV */
 
 #if defined(XSPI0)
 RAMFUNC void XSPI0_DriverIRQHandler(void);
@@ -3053,6 +3360,8 @@ void MAIN_XSPI1_DriverIRQHandler(void)
     SDK_ISR_EXIT_BARRIER;
 }
 #endif /* defined(MAIN_XSPI_1) */
+
+#endif /* defined(FSL_FEATURE_XSPI_HAS_EENV) && FSL_FEATURE_XSPI_HAS_EENV */
 
 #endif /* defined(FSL_DRIVER_TRANSFER_DOUBLE_WEAK_IRQ) && FSL_DRIVER_TRANSFER_DOUBLE_WEAK_IRQ */
 
