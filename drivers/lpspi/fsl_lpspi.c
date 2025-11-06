@@ -2353,7 +2353,7 @@ static uint32_t LPSPI_CombineWriteData(const uint8_t *txData, uint8_t bytesEachW
      * $Branch Coverage Justification$
      * $ref fsl_lpspi_c_ref_1$
      */
-    switch (bytesEachWrite)
+    switch (bytesEachWrite) /* GCOVR_EXCL_BR_LINE */
     {
         case 1:
             wordToSend = *txData;
@@ -2424,9 +2424,11 @@ static uint32_t LPSPI_CombineWriteData(const uint8_t *txData, uint8_t bytesEachW
             }
             break;
 
+        /* GCOVR_EXCL_START */
         default:
             assert(false);
             break;
+            /* GCOVR_EXCL_STOP */
     }
     return wordToSend;
 }
@@ -2509,10 +2511,12 @@ static void LPSPI_SeparateReadData(uint8_t *rxData, uint32_t readData, uint8_t b
             }
             break;
 
-        default: /* GCOVR_EXCL_START */
+        /* GCOVR_EXCL_START */
+        default:
             assert(false);
             break;
-    } /* GCOVR_EXCL_STOP */
+            /* GCOVR_EXCL_STOP */
+    }
 }
 
 /*!

@@ -461,10 +461,12 @@ status_t LPI2C_MasterTransferEDMA(LPI2C_Type *base,
          * $Branch Coverage Justification$
          * $ref fsl_lpi2c_edma_c_ref_3$
          */
-        if(handle->remainingCommand > 0U)
+        if(handle->remainingCommand > 0U) /* GCOVR_EXCL_BR_LINE */
         {
+            /* GCOVR_EXCL_START */
             handle->enableTxReadyFlag = true;
             EDMA_EnableChannelInterrupts(handle->rx->base, handle->rx->channel, (uint32_t)kEDMA_MajorInterruptEnable);
+            /* GCOVR_EXCL_STOP */
         }
         else
         {
@@ -644,8 +646,9 @@ static void LPI2C_MasterTransferEdmaHandleIRQ(LPI2C_Type *base, void *lpi2cMaste
      * $Branch Coverage Justification$
      * $ref fsl_lpi2c_edma_c_ref_3$
      */
-    if((0U != (LPI2C_MasterGetEnabledInterrupts(base) & (uint32_t)kLPI2C_MasterTxReadyFlag)) && (0U != (status & (uint32_t)kLPI2C_MasterTxReadyFlag)))
+    if((0U != (LPI2C_MasterGetEnabledInterrupts(base) & (uint32_t)kLPI2C_MasterTxReadyFlag)) && (0U != (status & (uint32_t)kLPI2C_MasterTxReadyFlag))) /* GCOVR_EXCL_BR_LINE */
     {
+        /* GCOVR_EXCL_START */
         if(handle->remainingCommand > 0U)
         {
             uint32_t i;
@@ -662,6 +665,7 @@ static void LPI2C_MasterTransferEdmaHandleIRQ(LPI2C_Type *base, void *lpi2cMaste
         {
             LPI2C_MasterDisableInterrupts(handle->base, (uint32_t)kLPI2C_MasterTxReadyFlag);
         }
+        /* GCOVR_EXCL_STOP */
     }
     else
     {

@@ -1886,9 +1886,9 @@ lin_status_t LIN_LPUART_AutoBaudCapture(uint32_t instance)
         (void)linUserConfig->timerGetTimeIntervalCallback(&tmpTime);
 
         /* $Branch Coverage Justification$ $ref lin_lpuart_c_ref_15$ */
-        if (s_timeMeasure[instance] > (0xFFFFFFFFUL - tmpTime))
+        if (s_timeMeasure[instance] > (0xFFFFFFFFUL - tmpTime)) /* GCOVR_EXCL_BR_LINE */
         {
-            return LIN_ERROR;
+            return LIN_ERROR; /* GCOVR_EXCL_LINE */
         }
         
         /* Get two bits time length */

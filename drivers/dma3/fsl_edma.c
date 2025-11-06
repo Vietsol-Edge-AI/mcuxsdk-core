@@ -1284,8 +1284,8 @@ void EDMA_StartTransfer(edma_handle_t *handle)
                  * (tcdRegs->CSR & DMA_TCD_CSR_ESG_MASK) != 0u) not covered.
                  * $ref edma_c_ref_3$.
                  */
-                if ((!((handle->base->CH[handle->channel].CH_CSR & DMA_CH_CSR_DONE_MASK) != 0U)) ||
-                    ((tcdRegs->CSR & DMA_TCD_CSR_ESG_MASK) != 0u)) /* GCOVR_EXCL_BR_LINE */
+                if ((!((handle->base->CH[handle->channel].CH_CSR & DMA_CH_CSR_DONE_MASK) != 0U)) || /* GCOVR_EXCL_BR_LINE */
+                    ((tcdRegs->CSR & DMA_TCD_CSR_ESG_MASK) != 0u)) /* GCOVR_EXCL_LINE */
                 {
                     /*
                         Re-enable channel request must be as soon as possible, so must put
