@@ -1,0 +1,133 @@
+/*!
+@defgroup trgsync TRGSYNC: Trigger Synchronization Driver
+
+*/
+
+/*!
+@defgroup trgsync_driver TRGSYNC Driver
+@ingroup trgsync
+@details The MCUXpresso SDK provides a peripheral driver for the Trigger Synchronization (TRGSYNC)
+module of MCUXpresso SDK devices.
+
+# Introduction {#TRGSYNCIntro}
+
+The TRGSYNC (Trigger Synchronization) module provides hardware trigger signal synchronization and 
+conditioning capabilities. It allows synchronization of asynchronous trigger signals to different 
+clock domains and provides signal conditioning features such as polarity control and pulse stretching.
+Function Clock (func_clk):    ┌─┐ ┌─┐ ┌─┐ ┌─┐ ┌─┐ ┌─┐ ┌─┐ ┌─┐ ┌─┐ ┌─┐ ┌─┐ ┌─┐ ┌─┐ ┌─┐ ┌─┐
+                            ──┘ └─┘ └─┘ └─┘ └─┘ └─┘ └─┘ └─┘ └─┘ └─┘ └─┘ └─┘ └─┘ └─┘ └─┘ └─┘
+
+Master trigger (async):     ____|‾|__________________________________|‾|______
+                                ↑  ↑
+                                |  +-- Next valid asynchronous edge must occur
+                                |      after (STRETCH_WIDTH + 6) function clock cycles,
+                                |      otherwise the second pulse will be ignored.
+                                +-- Rising edge captured by TRGSYNC
+                                    (default rising edge, configurable via POL_SEL)
+
+TRGSYNC Output (stretched): ____|‾‾‾‾‾‾‾‾|___________________________|‾‾‾‾‾‾‾‾|_____
+                                    ^^^^^^
+                                    Pulse stretched to STRETCH_WIDTH cycles
+                                    (range: 1..32 function clock cycles)
+
+Slave detect :             __________|‾‾‾‾‾‾‾‾|____________________________|‾‾‾‾‾‾‾‾|______
+                             (TRGSYNC output used as Slave trigger input)
+
+Slave Ack:                  _________|‾|____________________________________|‾|____
+                              (In the original master signal, no signal would be detected. However, 
+                              after Tsynchronizing the asynchronous signal via TRGSYNC, 
+                              the relevant signal can be detected.)
+
+# Features {#TRGSYNCFeatures}
+
+The TRGSYNC module supports:
+- Multiple independent channels
+- Configurable signal polarity (active high/active low)
+- Pulse stretching with configurable width
+- Functional clock source selection
+- Independent channel enable/disable control
+
+# Data Structures and Enumerations {#TRGSYNCDataStructures}
+
+## trgsync_polarity_t
+
+Defines the polarity options for trigger signals:
+- `kTRGSYNC_PolarityActiveHigh` - Active high polarity
+- `kTRGSYNC_PolarityActiveLow`  - Active low polarity
+
+## trgsync_stretch_width_t
+
+Defines pulse stretching options:
+- `kTRGSYNC_StretchDisable` - Disable stretch
+- `kTRGSYNC_Stretch2Cycles` - Stretch 2 cycles
+- `kTRGSYNC_Stretch4Cycles` - Stretch 4 cycles
+- `kTRGSYNC_Stretch8Cycles` - Stretch 8 cycles
+
+## trgsync_func_clock_source_t
+
+Defines available functional clock sources:
+- `kTRGSYNC_FuncClockBus`      - Bus clock
+- `kTRGSYNC_FuncClock32KHz`    - 32KHz clock
+- `kTRGSYNC_FuncClockExt`      - External clock
+- `kTRGSYNC_FuncClockReserved` - Reserved
+
+## trgsync_channel_config_t
+
+Channel configuration structure containing:
+- `enableChannel`         - Enable channel
+- `enableFunctionalClock` - Enable functional clock
+- `polarity`              - Polarity selection (trgsync_polarity_t)
+- `stretchWidth`          - Stretch width (trgsync_stretch_width_t)
+- `funcClockSource`       - Functional clock source (trgsync_func_clock_source_t)
+
+# Typical Usage Process
+
+## Basic Channel Configuration {#TRGSYNCBasicConfig}
+
+~~~~~{.c}
+    // Initialize TRGSYNC module
+    TRGSYNC_Init(TRGSYNC0);
+    
+    // Get default configuration
+    trgsync_channel_config_t channelConfig;
+    TRGSYNC_GetDefaultConfig(&channelConfig);
+    
+    // Customize configuration
+    channelConfig.enableChannel         = true;
+    channelConfig.enableFunctionalClock = true;
+    channelConfig.polarity               = kTRGSYNC_PolarityActiveHigh;
+    channelConfig.stretchWidth           = kTRGSYNC_Stretch2Cycles;
+    channelConfig.funcClockSource        = kTRGSYNC_FuncClockBus;
+    
+    // Configure channel 0
+    TRGSYNC_ConfigureChannel(TRGSYNC0, 0, &channelConfig);
+~~~~~
+
+## Runtime Channel Control {#TRGSYNCRuntimeControl}
+
+~~~~~{.c}
+    // Enable/disable channel during runtime
+    TRGSYNC_EnableChannel(TRGSYNC0, 0, true);
+    
+    // Enable/disable functional clock
+    TRGSYNC_EnableChannelFunctionalClock(TRGSYNC0, 0, true);
+    
+    // Change polarity
+    TRGSYNC_SetChannelPolarity(TRGSYNC0, 0, kTRGSYNC_PolarityActiveLow);
+    
+    // Modify stretch width
+    TRGSYNC_SetChannelStretchWidth(TRGSYNC0, 0, kTRGSYNC_Stretch4Cycles);
+    
+    // Change functional clock source
+    TRGSYNC_SetChannelFunctionalClockSource(TRGSYNC0, 0, kTRGSYNC_FuncClock32KHz);
+~~~~~
+
+# Notes {#TRGSYNCNotes}
+
+- The TRGSYNC module requires the module clock to be enabled before any configuration
+- Each channel can be independently configured and controlled
+- The functional clock must be enabled for proper trigger synchronization
+- Pulse stretching helps ensure trigger signals meet timing requirements of downstream modules
+- Default configuration sets all channels to disabled state with active high polarity and no pulse stretching
+
+*/
