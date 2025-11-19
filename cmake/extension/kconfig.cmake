@@ -193,7 +193,12 @@ set(EXTRA_KCONFIG_TARGET_COMMAND_FOR_menuconfig
 set(EXTRA_KCONFIG_TARGET_COMMAND_FOR_guiconfig
     ${SdkRootDirPath}/scripts/kconfig/guiconfig.py)
 
-set_ifndef(KCONFIG_TARGETS menuconfig guiconfig hardenconfig)
+set(EXTRA_KCONFIG_TARGET_COMMAND_FOR_traceconfig
+    ${SdkRootDirPath}/scripts/kconfig/traceconfig.py
+    ${DOTCONFIG}
+    ${CMAKE_CURRENT_BINARY_DIR}/kconfig-trace.md)
+
+set_ifndef(KCONFIG_TARGETS menuconfig guiconfig hardenconfig traceconfig)
 
 foreach(kconfig_target ${KCONFIG_TARGETS} ${EXTRA_KCONFIG_TARGETS})
   add_custom_target(

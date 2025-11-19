@@ -11,9 +11,9 @@ elseif(DEFINED WEST_TOPDIR)
   set(workspace_arg "--workspace=${WEST_TOPDIR}")
 endif()
 
-foreach(report ram_report rom_report)
+foreach(report ram rom)
   add_custom_target(
-    ${report}
+    ${report}_report
     ${PYTHON_EXECUTABLE}
     ${SdkRootDirPath}/scripts/footprint/size_report
     -k ${APPLICATION_BINARY_DIR}/${APPLICATION_BINARY_NAME}.elf
@@ -21,9 +21,19 @@ foreach(report ram_report rom_report)
     -o ${CMAKE_BINARY_DIR}
     ${workspace_arg}
     -d ${report_depth}
-    ${flag_for_${report}}
+    --json ${report}.json
+    ${flag_for_${report}_report}
     DEPENDS ${APPLICATION_BINARY_NAME}
-            $<TARGET_PROPERTY:mcux_build_properties,${report}_DEPENDENCIES>
+            $<TARGET_PROPERTY:mcux_build_properties,${report}_report_DEPENDENCIES>
+    USES_TERMINAL
+    WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
+    )
+  add_custom_target(
+    ${report}_plot
+    ${PYTHON_EXECUTABLE}
+    ${SdkRootDirPath}/scripts/footprint/plot.py
+    ${report}.json
+    DEPENDS ${report}_report
     USES_TERMINAL
     WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
     )
@@ -51,6 +61,15 @@ if(CONFIG_BUILD_WITH_TFM)
       USES_TERMINAL
       WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
       )
+    add_custom_target(
+      tfm_${report}_plot
+      ${PYTHON_EXECUTABLE}
+      ${SdkRootDirPath}/scripts/footprint/plot.py
+      tfm_${report}.json
+      DEPENDS tfm_${report}_report
+      USES_TERMINAL
+      WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
+      )
   endforeach()
 
   add_custom_target(
@@ -73,6 +92,15 @@ if(CONFIG_TFM_BL2)
       --json bl2_${report}.json
       ${flag_for_${report}_report}
       DEPENDS tfm
+      USES_TERMINAL
+      WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
+      )
+    add_custom_target(
+      bl2_${report}_plot
+      ${PYTHON_EXECUTABLE}
+      ${SdkRootDirPath}/scripts/footprint/size_report
+      bl2_${report}.json
+      DEPENDS bl2_${report}_report
       USES_TERMINAL
       WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
       )

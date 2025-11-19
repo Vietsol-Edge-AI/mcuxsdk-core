@@ -3,6 +3,9 @@
 # used by twister for --test-tree option
 anytree
 
+# used by scripts/footprint/plot.py for generating plots of size reports
+plotly
+
 # helper for developers - check git commit messages
 gitlint
 
