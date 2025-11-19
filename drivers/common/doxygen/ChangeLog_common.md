@@ -1,5 +1,11 @@
 # COMMON
 
+## [2.6.3]
+
+- New Features
+  - Added bit mask inversion macros to avoid type promotion.
+  - Added register operation macros.
+
 ## [2.6.2]
 
 - Bug Fixes
