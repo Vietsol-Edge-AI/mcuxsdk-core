@@ -1,5 +1,10 @@
 # FLEXCAN
 
+## [2.14.6]
+
+- Bug Fixes
+  - Fixed MCR register reconfiguration failure after FlexCAN soft reset on some platforms.
+
 ## [2.14.5]
 
 - Improvements

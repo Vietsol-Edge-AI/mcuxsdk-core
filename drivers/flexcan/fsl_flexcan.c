@@ -597,6 +597,12 @@ status_t FLEXCAN_EnterFreezeMode(CAN_Type *base)
                 u32TimeoutCount--;
             }
 
+            /* Add a short delay to ensure reset completion and MCR register correctly configured */
+            for (uint8_t i = 0; i < 10U; i++)
+            {
+                __NOP();
+            }
+
             /* Reconfig MCR. */
             base->MCR = u32TempMCR;
 
@@ -638,6 +644,12 @@ status_t FLEXCAN_EnterFreezeMode(CAN_Type *base)
         while ((0U == (base->MCR & CAN_MCR_FRZACK_MASK)) && (u32TimeoutCount > 0U))
         {
             u32TimeoutCount--;
+        }
+
+        /* Add a short delay to ensure reset completion and MCR register correctly configured */
+        for (uint8_t i = 0; i < 10U; i++)
+        {
+            __NOP();
         }
 
         /* Step8A: reconfig MCR. */
@@ -699,6 +711,12 @@ status_t FLEXCAN_EnterFreezeMode(CAN_Type *base)
         /* Step6: Poll the MCR register until the Soft Reset (SOFTRST) bit is cleared. */
         while (CAN_MCR_SOFTRST_MASK == (base->MCR & CAN_MCR_SOFTRST_MASK))
         {
+        }
+
+        /* Add a short delay to ensure reset completion and MCR register correctly configured */
+        for (uint8_t i = 0; i < 10U; i++)
+        {
+            __NOP();
         }
 
         /* Step7: reconfig MCR. */
@@ -907,6 +925,12 @@ static status_t FLEXCAN_Reset(CAN_Type *base)
             return kStatus_Timeout;
         }
 #endif
+    }
+
+    /* Add a short delay to ensure reset completion and MCR register correctly configured */
+    for (i = 0; i < 10; i++)
+    {
+        __NOP();
     }
 
     /* Reset MCR register. */
