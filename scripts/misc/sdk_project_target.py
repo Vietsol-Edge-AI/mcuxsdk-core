@@ -431,7 +431,7 @@ class MCUXAppTargets(object):
 
         extra_build_args = app_data.get('contents', {}).get('document', {}).get('extra_build_args', [])
         app_toolchains = app_data.get('contents', {}).get('toolchains', []) or app_shared_content.get('toolchains', [])
-        app_category = app_data.get('contents', {}).get('document', {}).get('category', app_dir.replace('\\', '/').split('/')[1])
+        app_category = app_data.get('contents', {}).get('document', {}).get('category') or app_dir.replace('\\', '/').split('/')[1]
         # SDKGEN-3118 Currently one example shall be bound with only one shield
         shield = list(app_data['shields'])[0] if app_data.get('shields', {}).keys() else None
         if shield and not self.filter_shield(shield):
@@ -454,6 +454,9 @@ class MCUXAppTargets(object):
                 if not is_enabled:
                     continue
                 toolchain, target = toolchain_target.split('@')
+                if toolchain not in SUPPORTED_TOOLCHAINS:
+                    logger.error(f"{app_dir}: Unsupported toolchain: {toolchain}")
+                    continue
                 if not self.filter_toolchain(toolchain) or not self.filter_target(target):
                     continue
                 real_app_name = app_name.replace('${core_id}', core_id)
