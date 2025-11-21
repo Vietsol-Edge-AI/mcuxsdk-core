@@ -3753,6 +3753,7 @@ typedef struct _netc_tx_bdr
     uint16_t producerIndex;          /*!< Current index for transmit. */
     uint16_t cleanIndex;             /*!< Current index for tx cleaning. */
     uint32_t len;                    /*!< Length of this BD ring. */
+    uint8_t enableInterrupt;         /*!< Interrupt flag for this BD ring. */
 } netc_tx_bdr_t;
 
 /*! @brief Status/Interrupts flags for the TX BDR. Each flag get its own bit thus it support bit AND/OR operation. */
