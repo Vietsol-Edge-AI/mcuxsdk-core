@@ -986,23 +986,16 @@ void SPDIF_TransferTxHandleIRQ(SPDIF_Type *base, spdif_handle_t *handle)
 }
 
 /*!
- * brief Rx interrupt handler.
+ * brief Handle new channel status interrupt.
  */
-void SPDIF_TransferRxHandleIRQ(SPDIF_Type *base, spdif_handle_t *handle)
+static void SPDIF_HandleRxChannelStatus(SPDIF_Type *base, spdif_handle_t *handle)
 {
-    uint8_t *buffer = NULL;
-    uint32_t dataSize;
+    uint8_t *buffer;
     uint32_t i;
-    volatile uint32_t *rxFifo;
-    uint32_t remainingBytes;
-    uint32_t wordsToTransfer;
-    uint32_t *data;
-    uint8_t queueDriver;
+    uint8_t queueDriver = handle->queueDriver;
 
     assert(base != NULL);
     assert(handle != NULL);
-
-    queueDriver = handle->queueDriver;
 
     /* Validate queue index */
     if (queueDriver >= SPDIF_XFER_QUEUE_SIZE)
@@ -1010,146 +1003,223 @@ void SPDIF_TransferRxHandleIRQ(SPDIF_Type *base, spdif_handle_t *handle)
         return;
     }
 
-    /* Handle new channel status */
-    if ((SPDIF_GetStatusFlags(base) & kSPDIF_RxNewChannelStatus) != 0U)
-    {
-        /* Clear the interrupt flag */
-        SPDIF_ClearStatusFlags(base, kSPDIF_RxNewChannelStatus);
+    /* Clear the interrupt flag */
+    SPDIF_ClearStatusFlags(base, kSPDIF_RxNewChannelStatus);
 
-        /* Copy channel status data if buffer is provided */
-        buffer = handle->spdifQueue[queueDriver].channelStatus;
-        if (buffer != NULL)
+    /* Copy channel status data if buffer is provided */
+    buffer = handle->spdifQueue[queueDriver].channelStatus;
+    if (buffer != NULL)
+    {
+        for (i = 0U; i < SPDIF_RX_CS_DATA_BITS_COUNT; i++)
         {
-            for (i = 0U; i < SPDIF_RX_CS_DATA_BITS_COUNT; i++)
+            uint32_t csData  = base->RX_CS_DATA_BITS[i];
+            size_t baseIndex = (size_t)i * 4U;
+
+            /* Bounds check to prevent buffer overflow */
+            if ((baseIndex + 3U) < (SPDIF_RX_CS_DATA_BITS_COUNT * 4U))
             {
-                uint32_t csData  = base->RX_CS_DATA_BITS[i];
-                size_t baseIndex = (size_t)i * 4U;
-
-                /* Bounds check to prevent buffer overflow */
-                if ((baseIndex + 3U) < (SPDIF_RX_CS_DATA_BITS_COUNT * 4U))
-                {
-                    buffer[baseIndex]      = (uint8_t)(csData & 0xFFU);
-                    buffer[baseIndex + 1U] = (uint8_t)((csData >> 8U) & 0xFFU);
-                    buffer[baseIndex + 2U] = (uint8_t)((csData >> 16U) & 0xFFU);
-                    buffer[baseIndex + 3U] = (uint8_t)((csData >> 24U) & 0xFFU);
-                }
-            }
-            /* Acknowledge channel status */
-            base->RX_DATAPATH_CTRL.SET = SPDIF_RX_DATAPATH_CTRL_CSA_MASK;
-        }
-
-        if (handle->callback != NULL)
-        {
-            (handle->callback)(base, handle, kStatus_SPDIF_RxCnew, handle->userData);
-        }
-    }
-
-    /* Handle user data */
-    if ((SPDIF_GetStatusFlags(base) & kSPDIF_RxUserData) != 0U)
-    {
-        /* Clear the interrupt flag */
-        SPDIF_ClearStatusFlags(base, kSPDIF_RxUserData);
-
-        /* Copy user data if buffer is provided */
-        buffer = handle->spdifQueue[queueDriver].userData;
-        if (buffer != NULL)
-        {
-            for (i = 0U; i < SPDIF_RX_USER_DATA_BITS_COUNT; i++)
-            {
-                uint32_t userData = base->RX_USER_DATA_BITS[i];
-                size_t baseIndex  = (size_t)i * 4U;
-
-                /* Bounds check to prevent buffer overflow */
-                if ((baseIndex + 3U) < (SPDIF_RX_USER_DATA_BITS_COUNT * 4U))
-                {
-                    buffer[baseIndex]      = (uint8_t)(userData & 0xFFU);
-                    buffer[baseIndex + 1U] = (uint8_t)((userData >> 8U) & 0xFFU);
-                    buffer[baseIndex + 2U] = (uint8_t)((userData >> 16U) & 0xFFU);
-                    buffer[baseIndex + 3U] = (uint8_t)((userData >> 24U) & 0xFFU);
-                }
-            }
-            /* Acknowledge user data */
-            base->RX_DATAPATH_CTRL.SET = SPDIF_RX_DATAPATH_CTRL_UDA_MASK;
-        }
-
-        if (handle->callback != NULL)
-        {
-            (handle->callback)(base, handle, kStatus_SPDIF_RxUserData, handle->userData);
-        }
-    }
-
-    /* Handle FIFO overflow/underflow error */
-    if ((SPDIF_GetStatusFlags(base) & kSPDIF_FifoOverflowUnderflow) != 0U)
-    {
-        SPDIF_ClearStatusFlags(base, kSPDIF_FifoOverflowUnderflow);
-        if (handle->callback != NULL)
-        {
-            (handle->callback)(base, handle, kStatus_SPDIF_RxFIFOError, handle->userData);
-        }
-    }
-
-    /* Handle audio data transfer */
-    if (((SPDIF_GetStatusFlags(base) & kSPDIF_DmaReadRequest) != 0U) &&
-        ((base->EXT_IER0.RW & kSPDIF_DmaReadRequestInterrupt) != 0U))
-    {
-        dataSize = (uint32_t)handle->watermark;
-        buffer   = handle->spdifQueue[queueDriver].data;
-
-        /* Check for valid buffer pointer */
-        if (buffer != NULL)
-        {
-            /* Calculate how much data we can actually transfer */
-            remainingBytes = handle->spdifQueue[queueDriver].dataSize;
-
-            /* Prevent division by zero and overflow */
-            if ((dataSize > 0U) && (remainingBytes > 0U))
-            {
-                wordsToTransfer = (remainingBytes < (dataSize * 4U)) ? (remainingBytes / 4U) : dataSize;
-
-                /* MISRA C-2012 Rule 11.4: Cast base address to access FIFO */
-                rxFifo = (volatile uint32_t *)((uintptr_t)base + SPDIF_RX_FIFO_ADDR_OFFSET);
-
-                /* MISRA C-2012 Rule 11.3: Cast to uint32_t pointer for word access */
-                data = (uint32_t *)(void *)buffer;
-
-                /* Transfer data from FIFO */
-                for (i = 0U; i < wordsToTransfer; i++)
-                {
-                    data[i] = *rxFifo;
-                }
-
-                /* Update transfer state */
-                handle->spdifQueue[queueDriver].dataSize -= wordsToTransfer * 4U;
-                /* MISRA C-2012 Rule 18.4: Pointer arithmetic within bounds */
-                handle->spdifQueue[queueDriver].data = &handle->spdifQueue[queueDriver].data[wordsToTransfer * 4U];
-
-                /* If finished a block, call the callback function */
-                if (handle->spdifQueue[queueDriver].dataSize == 0U)
-                {
-                    (void)memset(&handle->spdifQueue[queueDriver], 0, sizeof(spdif_transfer_t));
-                    handle->queueDriver = (uint8_t)((handle->queueDriver + 1U) % SPDIF_XFER_QUEUE_SIZE);
-
-                    if (handle->callback != NULL)
-                    {
-                        (handle->callback)(base, handle, kStatus_SPDIF_RxIdle, handle->userData);
-                    }
-                }
-
-                /* If all data finished, just stop the transfer */
-                if (handle->spdifQueue[handle->queueDriver].data == NULL)
-                {
-                    SPDIF_TransferAbortReceive(base, handle);
-                }
+                buffer[baseIndex]      = (uint8_t)(csData & 0xFFU);
+                buffer[baseIndex + 1U] = (uint8_t)((csData >> 8U) & 0xFFU);
+                buffer[baseIndex + 2U] = (uint8_t)((csData >> 16U) & 0xFFU);
+                buffer[baseIndex + 3U] = (uint8_t)((csData >> 24U) & 0xFFU);
             }
         }
+        /* Acknowledge channel status */
+        base->RX_DATAPATH_CTRL.SET = SPDIF_RX_DATAPATH_CTRL_CSA_MASK;
+    }
+
+    if (handle->callback != NULL)
+    {
+        (handle->callback)(base, handle, kStatus_SPDIF_RxCnew, handle->userData);
     }
 }
 
-#if defined(AUDIO_SPDIF)
-void AUDIO_SPDIF_DriverIRQHandler(uint32_t instance);
-void AUDIO_SPDIF_DriverIRQHandler(uint32_t instance)
+/*!
+ * brief Handle user data interrupt.
+ */
+static void SPDIF_HandleRxUserData(SPDIF_Type *base, spdif_handle_t *handle)
 {
-    if (instance > ARRAY_SIZE(s_spdifXcvrBases))
+    uint8_t *buffer;
+    uint32_t i;
+    uint8_t queueDriver = handle->queueDriver;
+
+    assert(base != NULL);
+    assert(handle != NULL);
+
+    /* Validate queue index */
+    if (queueDriver >= SPDIF_XFER_QUEUE_SIZE)
+    {
+        return;
+    }
+
+    /* Clear the interrupt flag */
+    SPDIF_ClearStatusFlags(base, kSPDIF_RxUserData);
+
+    /* Copy user data if buffer is provided */
+    buffer = handle->spdifQueue[queueDriver].userData;
+    if (buffer != NULL)
+    {
+        for (i = 0U; i < SPDIF_RX_USER_DATA_BITS_COUNT; i++)
+        {
+            uint32_t userData = base->RX_USER_DATA_BITS[i];
+            size_t baseIndex  = (size_t)i * 4U;
+
+            /* Bounds check to prevent buffer overflow */
+            if ((baseIndex + 3U) < (SPDIF_RX_USER_DATA_BITS_COUNT * 4U))
+            {
+                buffer[baseIndex]      = (uint8_t)(userData & 0xFFU);
+                buffer[baseIndex + 1U] = (uint8_t)((userData >> 8U) & 0xFFU);
+                buffer[baseIndex + 2U] = (uint8_t)((userData >> 16U) & 0xFFU);
+                buffer[baseIndex + 3U] = (uint8_t)((userData >> 24U) & 0xFFU);
+            }
+        }
+        /* Acknowledge user data */
+        base->RX_DATAPATH_CTRL.SET = SPDIF_RX_DATAPATH_CTRL_UDA_MASK;
+    }
+
+    if (handle->callback != NULL)
+    {
+        (handle->callback)(base, handle, kStatus_SPDIF_RxUserData, handle->userData);
+    }
+}
+
+/*!
+ * brief Handle FIFO error interrupt.
+ */
+static void SPDIF_HandleRxFifoError(SPDIF_Type *base, spdif_handle_t *handle)
+{
+    assert(base != NULL);
+    assert(handle != NULL);
+
+    SPDIF_ClearStatusFlags(base, kSPDIF_FifoOverflowUnderflow);
+
+    if (handle->callback != NULL)
+    {
+        (handle->callback)(base, handle, kStatus_SPDIF_RxFIFOError, handle->userData);
+    }
+}
+
+/*!
+ * brief Handle audio data transfer from RX FIFO.
+ */
+static void SPDIF_HandleRxDataTransfer(SPDIF_Type *base, spdif_handle_t *handle)
+{
+    uint8_t *buffer;
+    uint32_t dataSize;
+    uint32_t i;
+    volatile uint32_t *rxFifo;
+    uint32_t remainingBytes;
+    uint32_t wordsToTransfer;
+    uint32_t *data;
+    uint8_t queueDriver = handle->queueDriver;
+
+    assert(base != NULL);
+    assert(handle != NULL);
+
+    /* Validate queue index */
+    if (queueDriver >= SPDIF_XFER_QUEUE_SIZE)
+    {
+        return;
+    }
+
+    dataSize = (uint32_t)handle->watermark;
+    buffer   = handle->spdifQueue[queueDriver].data;
+
+    /* Check for valid buffer pointer */
+    if (buffer == NULL)
+    {
+        return;
+    }
+
+    /* Calculate how much data we can actually transfer */
+    remainingBytes = handle->spdifQueue[queueDriver].dataSize;
+
+    /* Prevent division by zero and overflow */
+    if ((dataSize == 0U) || (remainingBytes == 0U))
+    {
+        return;
+    }
+
+    wordsToTransfer = (remainingBytes < (dataSize * 4U)) ? (remainingBytes / 4U) : dataSize;
+
+    /* MISRA C-2012 Rule 11.4: Cast base address to access FIFO */
+    rxFifo = (volatile uint32_t *)((uintptr_t)base + SPDIF_RX_FIFO_ADDR_OFFSET);
+
+    /* MISRA C-2012 Rule 11.3: Cast to uint32_t pointer for word access */
+    data = (uint32_t *)(void *)buffer;
+
+    /* Transfer data from FIFO */
+    for (i = 0U; i < wordsToTransfer; i++)
+    {
+        data[i] = *rxFifo;
+    }
+
+    /* Update transfer state */
+    handle->spdifQueue[queueDriver].dataSize -= wordsToTransfer * 4U;
+    /* MISRA C-2012 Rule 18.4: Pointer arithmetic within bounds */
+    handle->spdifQueue[queueDriver].data = &handle->spdifQueue[queueDriver].data[wordsToTransfer * 4U];
+
+    /* If finished a block, call the callback function */
+    if (handle->spdifQueue[queueDriver].dataSize == 0U)
+    {
+        (void)memset(&handle->spdifQueue[queueDriver], 0, sizeof(spdif_transfer_t));
+        handle->queueDriver = (uint8_t)((handle->queueDriver + 1U) % SPDIF_XFER_QUEUE_SIZE);
+
+        if (handle->callback != NULL)
+        {
+            (handle->callback)(base, handle, kStatus_SPDIF_RxIdle, handle->userData);
+        }
+    }
+
+    /* If all data finished, just stop the transfer */
+    if (handle->spdifQueue[handle->queueDriver].data == NULL)
+    {
+        SPDIF_TransferAbortReceive(base, handle);
+    }
+}
+
+/*!
+ * brief Rx interrupt handler.
+ */
+void SPDIF_TransferRxHandleIRQ(SPDIF_Type *base, spdif_handle_t *handle)
+{
+    uint32_t statusFlags;
+
+    assert(base != NULL);
+    assert(handle != NULL);
+
+    statusFlags = SPDIF_GetStatusFlags(base);
+
+    /* Handle new channel status */
+    if ((statusFlags & kSPDIF_RxNewChannelStatus) != 0U)
+    {
+        SPDIF_HandleRxChannelStatus(base, handle);
+    }
+
+    /* Handle user data */
+    if ((statusFlags & kSPDIF_RxUserData) != 0U)
+    {
+        SPDIF_HandleRxUserData(base, handle);
+    }
+
+    /* Handle FIFO overflow/underflow error */
+    if ((statusFlags & kSPDIF_FifoOverflowUnderflow) != 0U)
+    {
+        SPDIF_HandleRxFifoError(base, handle);
+    }
+
+    /* Handle audio data transfer */
+    if (((statusFlags & kSPDIF_DmaReadRequest) != 0U) &&
+        ((base->EXT_IER0.RW & kSPDIF_DmaReadRequestInterrupt) != 0U))
+    {
+        SPDIF_HandleRxDataTransfer(base, handle);
+    }
+}
+
+void SPDIF_DriverIRQHandler(uint32_t instance);
+void SPDIF_DriverIRQHandler(uint32_t instance)
+{
+    if (instance >= ARRAY_SIZE(s_spdifXcvrBases))
     {
         return;
     }
@@ -1165,4 +1235,3 @@ void AUDIO_SPDIF_DriverIRQHandler(uint32_t instance)
     }
     SDK_ISR_EXIT_BARRIER;
 }
-#endif
