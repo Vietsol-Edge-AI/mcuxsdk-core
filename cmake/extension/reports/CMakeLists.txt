@@ -119,7 +119,7 @@ if(NOT ${PUNCOVER} STREQUAL PUNCOVER-NOTFOUND)
     puncover
     ${PUNCOVER}
     --elf_file       ${APPLICATION_BINARY_DIR}/${APPLICATION_BINARY_NAME}.elf
-    --gcc_tools_base ${CROSS_COMPILE}
+    --gcc-tools-base ${CROSS_COMPILE}
     --src_root       ${SdkRootDirPath}
     --build_dir      ${CMAKE_BINARY_DIR}
     DEPENDS ${APPLICATION_BINARY_NAME}
