@@ -275,8 +275,7 @@ static inline void SMC_SetPowerModeProtection(SMC_Type *base, uint8_t allowedMod
 static inline smc_power_state_t SMC_GetPowerModeState(SMC_Type *base)
 {
     /* INT31-C: Validate register value before casting to enum */
-    uint32_t pmstat = base->PMSTAT;
-    assert(pmstat <= 0xFFU);
+    uint8_t pmstat = (uint8_t)((base->PMSTAT & SMC_PMSTAT_PMSTAT_MASK) >> SMC_PMSTAT_PMSTAT_SHIFT);
     return (smc_power_state_t)pmstat;
 }
 

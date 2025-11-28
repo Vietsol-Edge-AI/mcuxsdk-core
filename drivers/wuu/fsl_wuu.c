@@ -220,8 +220,6 @@ void WUU_SetPinFilterConfig(WUU_Type *base, uint8_t filterIndex, const wuu_pin_f
         filterReg |= WUU_SET_BIT_FIELD_IN_REG(config->pinIndex, shift);
 
         /* Config wake up event. */
-        /* INT31-C: Ensure (filterIndex - 1U) * 2U fits in uint8_t */
-        assert((filterIndex - 1U) <= (UINT8_MAX / 2U));
         shift    = (filterIndex - 1U) * 2U;
         eventReg = base->FDC;
         eventReg &= WUU_CLEAR_BIT_FIELD_IN_REG(WUU_FDC_REG_FILTC_FIELD_MASK, shift);
@@ -229,8 +227,6 @@ void WUU_SetPinFilterConfig(WUU_Type *base, uint8_t filterIndex, const wuu_pin_f
         base->FDC = eventReg;
 
         /* Config operate mode. */
-        /* INT31-C: Ensure (filterIndex - 1U) * 1U fits in uint8_t */
-        assert((filterIndex - 1U) <= UINT8_MAX);
         shift   = (filterIndex - 1U) * 1U;
         modeReg = base->FMC;
         modeReg &= WUU_CLEAR_BIT_FIELD_IN_REG(WUU_FMC_REG_FILTM_FIELD_MASK, shift);

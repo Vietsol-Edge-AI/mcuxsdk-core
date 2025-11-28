@@ -112,7 +112,7 @@ void PMC_ConfigureHighVoltDetect(PMC_Type *base, const pmc_high_volt_detect_conf
 void PMC_ConfigureBandgapBuffer(PMC_Type *base, const pmc_bandgap_buffer_config_t *config)
 {
     /* INT31-C: Validate value fits in uint8_t before narrowing conversion */
-    uint32_t regsc_value = (0U
+    uint8_t regsc_value = (0U
 #if (defined(FSL_FEATURE_PMC_HAS_BGBE) && FSL_FEATURE_PMC_HAS_BGBE)
                             | ((uint32_t)(config->enable ? 1U : 0U) << PMC_REGSC_BGBE_SHIFT)
 #endif /* FSL_FEATURE_PMC_HAS_BGBE */
@@ -123,7 +123,6 @@ void PMC_ConfigureBandgapBuffer(PMC_Type *base, const pmc_bandgap_buffer_config_
                             | ((uint32_t)config->drive << PMC_REGSC_BGBDS_SHIFT)
 #endif /* FSL_FEATURE_PMC_HAS_BGBDS */
     );
-    assert(regsc_value <= UINT8_MAX);
     base->REGSC = (uint8_t)regsc_value;
 }
 #endif
