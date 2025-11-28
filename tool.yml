@@ -4,7 +4,7 @@
 
 toolchains:
   armgcc:
-    name: GCC ARM Embedded 14.2.Rel1
+    name: ARM GCC / MCUXpresso for VS Code
     toolchain: armgcc
     version: 14.2.1
     compiler: gcc
