@@ -61,3 +61,8 @@ west-commands:
       - name: cfg_resolve
         class: CfgResolve
         help: Configure project based on CFG Tools requirements
+  - file: scripts/west_commands/patch.py
+    commands:
+      - name: patch
+        class: Patch
+        help: manage patches for west projects
