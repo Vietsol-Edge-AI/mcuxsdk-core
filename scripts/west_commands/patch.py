@@ -255,6 +255,83 @@ class Patch(WestCommand):
             help='File containing GitHub token (alternatively, use GITHUB_TOKEN env variable)',
         )
 
+        bb_fetch_arg_parser = subparsers.add_parser(
+            "bb-fetch",
+            help="Fetch patch from Bitbucket",
+            formatter_class=argparse.RawDescriptionHelpFormatter,
+            epilog=textwrap.dedent("""
+            Fetching Patches from Bitbucket:
+            Run "west patch bb-fetch" to fetch a PR from Bitbucket and store it as a patch.
+
+            Example:
+            west patch bb-fetch --owner MCUCORE --repo mcuxsdk-core --pull-request 1123 --module core
+            """),
+        )
+
+        bb_fetch_arg_parser.add_argument(
+            "-s",
+            "--split-commits",
+            action="store_true",
+            help="Create patch files for each commit instead of a single patch for the entire PR",
+        )
+
+        bb_fetch_arg_parser.add_argument(
+            "-o", 
+            "--owner", 
+            help="Bitbucket project key (e.g., MCUCORE)", 
+            required=True
+        )
+
+        bb_fetch_arg_parser.add_argument(
+            "-r", 
+            "--repo", 
+            help="Bitbucket repository slug (e.g., mcuxsdk-core)", 
+            required=True
+        )
+
+        bb_fetch_arg_parser.add_argument(
+            "-pr", 
+            "--pull-request", 
+            metavar="ID", 
+            type=int, 
+            required=True,
+            help="Bitbucket Pull Request ID"
+        )
+
+        bb_fetch_arg_parser.add_argument(
+            "-m", 
+            "--module", 
+            metavar="DIR", 
+            type=Path, 
+            required=True
+        )
+
+        bb_fetch_arg_parser.add_argument(
+            "-t", 
+            "--tokenfile", 
+            metavar="FILE", 
+            help="File with Bitbucket token"
+        )
+        
+        bb_fetch_arg_parser.add_argument(
+            "-u",
+            "--username",
+            help="Bitbucket username (alternatively, use BITBUCKET_USERNAME env variable)"
+        )
+
+        bb_fetch_arg_parser.add_argument(
+            "-p",
+            "--password",
+            help="Bitbucket password or Personal Access Token (alternatively, use BITBUCKET_PASSWORD env variable)"
+        )
+
+        bb_fetch_arg_parser.add_argument(
+            "--base-url",
+            action="store",
+            default="https://bitbucket.sw.nxp.com",
+            help="Bitbucket server base URL (default: https://bitbucket.sw.nxp.com)"
+        )
+
         subparsers.add_parser(
             "list",
             help="List patches",
@@ -331,7 +408,7 @@ class Patch(WestCommand):
         if not os.path.isfile(west_config):
             self.die(f"{args.west_workspace} is not a valid west workspace")
 
-        yml = self.load_yml(args, args.subcommand in ["gh-fetch"])
+        yml = self.load_yml(args, args.subcommand in ["gh-fetch", "bb-fetch"])
         if yml is None:
             return
 
@@ -343,6 +420,7 @@ class Patch(WestCommand):
             "clean": self.clean,
             "list": self.list,
             "gh-fetch": self.gh_fetch,
+            "bb-fetch": self.bb_fetch,
         }
 
         method[args.subcommand](args, yml, args.dst_modules)
@@ -367,7 +445,6 @@ class Patch(WestCommand):
             patch_path = os.path.realpath(Path(args.patch_base) / pth)
 
             apply_cmd = patch_info["apply-command"]
-            print(f"==={patch_path}")
             apply_cmd_list = shlex.split(apply_cmd)
 
             self.dbg(f"reading patch file {pth}")
@@ -508,6 +585,7 @@ class Patch(WestCommand):
                 }
 
                 yml.setdefault("patches", []).append(patch_info)
+                self.inf(f"  ✓ Created {args.patch_base}/{filename}")
         else:
             filename = "-".join(filter(None, re.split("[^a-zA-Z0-9]+", pr.title))) + ".patch"
             urllib.request.urlretrieve(pr.patch_url, args.patch_base / filename)
@@ -525,10 +603,390 @@ class Patch(WestCommand):
             }
 
             yml.setdefault("patches", []).append(patch_info)
+            self.inf(f"  ✓ Created {args.patch_base}/{filename}")
 
         args.patch_yml.parent.mkdir(parents=True, exist_ok=True)
         with open(args.patch_yml, "w") as f:
             yaml.dump(yml, f, Dumper=SafeDumper)
+
+    def _convert_bitbucket_commit_to_patch(self, diff_data, commit_data, pr_data):
+        """Convert a single commit's Bitbucket diff into standard Git patch format."""
+        import datetime
+
+        lines = []
+
+        # get commit information
+        commit_id = commit_data.get('id', '')
+        author_name = commit_data.get('author', {}).get('displayName', 'Unknown')
+        author_email = commit_data.get('author', {}).get('emailAddress', 'unknown@nxp.com')
+        commit_msg = commit_data.get('message', '').strip()
+        timestamp = commit_data.get('authorTimestamp', 0)
+
+        # Git patch head
+        date_obj = datetime.datetime.fromtimestamp(timestamp / 1000)
+
+        # Standard git format-patch
+        lines.append(f"From {commit_id} Mon Sep 17 00:00:00 2001")
+        lines.append(f"From: {author_name} <{author_email}>")
+        lines.append(f"Date: {date_obj.strftime('%a, %d %b %Y %H:%M:%S %z')}")
+
+        # Commit message
+        commit_lines = commit_msg.splitlines()
+        if commit_lines:
+            lines.append(f"Subject: [PATCH] {commit_lines[0]}")
+            lines.append("")
+
+            # Add commit message body
+            if len(commit_lines) > 1:
+                for line in commit_lines[1:]:
+                    lines.append(line)
+                lines.append("")
+
+        lines.append("---")
+
+        # Summary diffs
+        files_changed = len(diff_data.get('diffs', []))
+        if files_changed > 0:
+            lines.append(f" {files_changed} file{'s' if files_changed != 1 else ''} changed")
+            lines.append("")
+
+        # Handle diff for each file
+        for diff in diff_data.get('diffs', []):
+            source = diff.get('source', {})
+            destination = diff.get('destination', {})
+
+            # Get file path
+            src_path = source.get('toString', '/dev/null') if source else '/dev/null'
+            dst_path = destination.get('toString', '/dev/null') if destination else '/dev/null'
+
+            # Skip truncated diffs
+            if diff.get('truncated', False):
+                lines.append(f"# Diff for {dst_path} was truncated")
+                lines.append("")
+                continue
+
+            # diff --git line
+            if src_path != '/dev/null' and dst_path != '/dev/null':
+                lines.append(f"diff --git a/{src_path} b/{dst_path}")
+            elif src_path == '/dev/null':
+                lines.append(f"diff --git a/{dst_path} b/{dst_path}")
+            else:
+                lines.append(f"diff --git a/{src_path} b/{src_path}")
+
+            # Hnadle file mode change
+            if not source and destination:
+                # new file
+                lines.append("new file mode 100644")
+                lines.append("index 0000000..0000000")
+                lines.append(f"--- /dev/null")
+                lines.append(f"+++ b/{dst_path}")
+            elif source and not destination:
+                # delete file
+                lines.append("deleted file mode 100644")
+                lines.append("index 0000000..0000000")
+                lines.append(f"--- a/{src_path}")
+                lines.append(f"+++ /dev/null")
+            else:
+                # Modify file
+                lines.append("index 0000000..0000000 100644")
+                lines.append(f"--- a/{src_path}")
+                lines.append(f"+++ b/{dst_path}")
+
+            # Hnadle each hunk
+            hunks = diff.get('hunks', [])
+            if not hunks:
+                # If there are no hunks, it might be a binary file or an empty change.
+                lines.append("")
+                continue
+
+            for hunk in hunks:
+                src_line = hunk.get('sourceLine', 0)
+                src_span = hunk.get('sourceSpan', 0)
+                dst_line = hunk.get('destinationLine', 0)
+                dst_span = hunk.get('destinationSpan', 0)
+
+                # @@ line
+                lines.append(f"@@ -{src_line},{src_span} +{dst_line},{dst_span} @@")
+
+                # Handle each segment
+                for segment in hunk.get('segments', []):
+                    seg_type = segment.get('type', 'CONTEXT')
+
+                    for line_obj in segment.get('lines', []):
+                        # Note：Bitbucket API return line field may not contain newline characters.
+                        line_text = line_obj.get('line', '')
+
+                        # Add prefix based on segment type
+                        if seg_type == 'REMOVED':
+                            lines.append(f"-{line_text}")
+                        elif seg_type == 'ADDED':
+                            lines.append(f"+{line_text}")
+                        else:  # CONTEXT
+                            lines.append(f" {line_text}")
+
+            # empty line between files
+            lines.append("")
+
+        # Git patch ending mark
+        lines.append("-- ")
+        lines.append("2.34.1")
+        lines.append("")
+
+        return '\n'.join(lines)
+
+    def bb_fetch(self, args, yml, mods=None):
+        if mods:
+            self.die(
+                "Module filters are not available for the bb-fetch subcommand, "
+                "pass a single -m/--module argument after the subcommand."
+            )
+
+        import requests
+        import getpass
+        from requests.auth import HTTPBasicAuth
+        import datetime
+
+        # Obtain authentication information.
+        username = args.username or\
+            os.getenv('USERNAME') or \
+            input('Input NXP wbi id (e.g, nxa16738):')
+
+        password = args.password or\
+            os.getenv('PASSWORD') or \
+            getpass.getpass('Input NXP wbi password (Use Powershell or provide by --password, it will stuck in Gitbash!!!):')
+
+        if not username or not password:
+            self.die("Bitbucket credentials required. Use --username/--password or set USERNAME/PASSWORD env variables")
+
+        # Use Basic Authentication
+        auth = HTTPBasicAuth(username, password)
+        base_url = args.base_url.rstrip('/')
+        api_base = f"{base_url}/rest/api/latest"
+        pr_url = f"{api_base}/projects/{args.owner}/repos/{args.repo}/pull-requests/{args.pull_request}"
+
+        try:
+            # Get PR information
+            response = requests.get(pr_url, auth=auth, verify=True, timeout=30)
+            response.raise_for_status()
+            pr_data = response.json()
+
+            self.inf(f"PR Title: {pr_data.get('title')}")
+            self.inf(f"PR State: {pr_data.get('state')}")
+
+            args.patch_base.mkdir(parents=True, exist_ok=True)
+
+            if args.split_commits:
+                # Get all commits from PR
+                commits_url = f"{pr_url}/commits"
+                commits_response = requests.get(
+                    commits_url,
+                    auth=auth,
+                    verify=True,
+                    params={'limit': 1000},
+                    timeout=30
+                )
+                commits_response.raise_for_status()
+                commits_data = commits_response.json()
+
+                commits = commits_data.get('values', [])
+                self.inf(f"Found {len(commits)} commits in PR #{args.pull_request}")
+
+                if not commits:
+                    self.die(f"No commits found in PR #{args.pull_request}")
+
+                commits.reverse()
+                # Create patch for each commit
+                for idx, commit in enumerate(commits, 1):
+                    commit_id = commit.get('id')
+                    commit_msg = commit.get('message', '').strip()
+                    commit_subject = commit_msg.splitlines()[0] if commit_msg else f'commit-{idx}'
+
+                    self.inf(f"Processing commit {idx}/{len(commits)}: {commit_id[:8]} - {commit_subject}")
+
+                    # Create patch name
+                    safe_subject = re.sub(r'[^\w\s-]', '', commit_subject[:50])
+                    safe_subject = re.sub(r'[-\s]+', '-', safe_subject).strip('-')
+                    filename = f"{idx:04d}-{safe_subject}.patch" if safe_subject else f"{idx:04d}-commit.patch"
+
+                    # Get commit diff
+                    commit_diff_url = f"{api_base}/projects/{args.owner}/repos/{args.repo}/commits/{commit_id}/diff"
+                    commit_diff_response = requests.get(
+                        commit_diff_url,
+                        auth=auth,
+                        verify=True,
+                        params={
+                            'contextLines': 3,
+                            'whitespace': 'show'  # Keep empty character
+                        },
+                        timeout=30
+                    )
+                    commit_diff_response.raise_for_status()
+                    commit_diff_data = commit_diff_response.json()
+
+                    # Translate to patch format
+                    patch_content = self._convert_bitbucket_commit_to_patch(commit_diff_data, commit, pr_data)
+                    patch_file = args.patch_base / filename
+
+                    # Use Unix EOF
+                    with open(patch_file, 'w', encoding='utf-8', newline='\n') as f:
+                        f.write(patch_content)
+
+                    # Get commit author information
+                    author_name = commit.get('author', {}).get('displayName', 'Unknown')
+                    author_email = commit.get('author', {}).get('emailAddress', 'unknown@nxp.com')
+                    commit_date = datetime.datetime.fromtimestamp(
+                        commit.get('authorTimestamp', 0) / 1000
+                    ).strftime("%Y-%m-%d")
+
+                    patch_info = {
+                        "path": filename,
+                        "sha256sum": self.get_file_sha256sum(patch_file),
+                        "module": str(args.module),
+                        "author": author_name,
+                        "email": author_email,
+                        "date": commit_date,
+                        "upstreamable": True,
+                        "merge-pr": f"{base_url}/projects/{args.owner}/repos/{args.repo}/pull-requests/{args.pull_request}",
+                        "merge-status": pr_data.get('state') == 'MERGED',
+                        "apply-command": "git apply"
+                    }
+
+                    yml.setdefault("patches", []).append(patch_info)
+                    self.inf(f"  ✓ Created {patch_file}")
+
+                self.inf(f"\nSuccessfully created {len(commits)} patch files")
+            else:
+                # Create single patch
+                pr_title = pr_data.get('title', f'PR-{args.pull_request}')
+                safe_title = re.sub(r'[^\w\s-]', '', pr_title)
+                safe_title = re.sub(r'[-\s]+', '-', safe_title).strip('-')
+                filename = f"{safe_title}.patch" if safe_title else f"PR-{args.pull_request}.patch"
+                # Get PR diff
+                diff_url = f"{pr_url}/diff"
+                diff_response = requests.get(
+                    diff_url, 
+                    auth=auth, 
+                    verify=True,
+                    params={
+                        'contextLines': 3,
+                        'whitespace': 'show'
+                    },
+                    timeout=30
+                )
+                diff_response.raise_for_status()
+                diff_data = diff_response.json()
+                # Transform patch format
+                patch_content = self._convert_bitbucket_diff_to_patch(diff_data, pr_data)
+                patch_file = args.patch_base / filename
+
+                # Use Unix EOF
+                with open(patch_file, 'w', encoding='utf-8', newline='\n') as f:
+                    f.write(patch_content)
+
+                # Get author info
+                author_name = pr_data.get('author', {}).get('user', {}).get('displayName', 'Unknown')
+                author_email = pr_data.get('author', {}).get('user', {}).get('emailAddress', 'unknown@nxp.com')
+                created_date = datetime.datetime.fromtimestamp(
+                    pr_data.get('createdDate', 0) / 1000
+                ).strftime("%Y-%m-%d")
+
+                patch_info = {
+                    "path": filename,
+                    "sha256sum": self.get_file_sha256sum(patch_file),
+                    "module": str(args.module),
+                    "author": author_name,
+                    "email": author_email,
+                    "date": created_date,
+                    "upstreamable": True,
+                    "merge-pr": f"{base_url}/projects/{args.owner}/repos/{args.repo}/pull-requests/{args.pull_request}",
+                    "merge-status": pr_data.get('state') == 'MERGED',
+                    "apply-command": "git apply"
+                }
+
+                yml.setdefault("patches", []).append(patch_info)
+                self.inf(f"✓ Created {patch_file}")
+
+            # Save updated patches.yml
+            args.patch_yml.parent.mkdir(parents=True, exist_ok=True)
+            with open(args.patch_yml, "w", encoding='utf-8') as f:
+                yaml.dump(yml, f, Dumper=SafeDumper, default_flow_style=False, allow_unicode=True)
+
+            self.inf(f"Successfully fetched patch from Bitbucket PR #{args.pull_request}")
+
+        except requests.exceptions.HTTPError as e:
+            if e.response.status_code == 401:
+                self.die("Authentication failed. Please check your username and password/token")
+            elif e.response.status_code == 404:
+                self.die(f"PR #{args.pull_request} not found in {args.owner}/{args.repo}")
+            else:
+                self.die(f"HTTP error: {e.response.status_code} - {e.response.text}")
+        except requests.exceptions.RequestException as e:
+            self.die(f"Request failed: {e}")
+        except Exception as e:
+            import traceback
+            traceback.print_exc()
+            self.die(f"Error processing Bitbucket PR: {e}")
+
+    def _convert_bitbucket_diff_to_patch(self, diff_data, pr_data):
+        """Convert Bitbucket PR diff JSON to unified diff patch 格式"""
+        import datetime
+
+        lines = []
+
+        # Add patch header
+        author = pr_data.get('author', {}).get('user', {}).get('displayName', 'Unknown')
+        email = pr_data.get('author', {}).get('user', {}).get('emailAddress', 'unknown@nxp.com')
+        title = pr_data.get('title', 'No title')
+        description = pr_data.get('description', '')
+
+        date = datetime.datetime.fromtimestamp(pr_data.get('createdDate', 0) / 1000).isoformat()
+
+        lines.append(f"From: {author} <{email}>")
+        lines.append(f"Date: {date}")
+        lines.append(f"Subject: {title}")
+        lines.append("")
+
+        if description:
+            lines.append(description)
+            lines.append("")
+
+        # Handle diff for each file
+        for diff in diff_data.get('diffs', []):
+            source = diff.get('source', {})
+            destination = diff.get('destination', {})
+
+            src_path = source.get('toString', '/dev/null')
+            dst_path = destination.get('toString', '/dev/null')
+
+            lines.append(f"--- a/{src_path}")
+            lines.append(f"+++ b/{dst_path}")
+
+            # Hnadle each hunk
+            for hunk in diff.get('hunks', []):
+                src_line = hunk.get('sourceLine', 0)
+                src_span = hunk.get('sourceSpan', 0)
+                dst_line = hunk.get('destinationLine', 0)
+                dst_span = hunk.get('destinationSpan', 0)
+
+                lines.append(f"@@ -{src_line},{src_span} +{dst_line},{dst_span} @@")
+
+                # Handle each segment
+                for segment in hunk.get('segments', []):
+                    seg_type = segment.get('type', 'CONTEXT')
+
+                    for line in segment.get('lines', []):
+                        line_text = line.get('line', '')
+
+                        if seg_type == 'REMOVED':
+                            lines.append(f"-{line_text}")
+                        elif seg_type == 'ADDED':
+                            lines.append(f"+{line_text}")
+                        else:  # CONTEXT
+                            lines.append(f" {line_text}")
+
+            lines.append("")
+
+        return '\n'.join(lines)
 
     @staticmethod
     def get_file_sha256sum(filename: Path) -> str:
@@ -559,11 +1017,13 @@ class Patch(WestCommand):
             return Path(module_name_or_path)
 
         all_modules = mcux_module.parse_modules(MCUX_BASE, self.manifest)
+
         for m in all_modules:
             if m.meta['name'] == module_name_or_path:
                 return Path(m.project).relative_to(topdir)
 
         path = self.get_west_project_path(module_name_or_path)
+
         if path:
             return path
 
@@ -581,30 +1041,31 @@ class Patch(WestCommand):
         """
         if module_name is None:
             return None
-        
+
         # Special handling for 'core' module
         if module_name == "core":
             return MCUX_BASE
-        
+
         west_projs = mcux_module.west_projects(self.manifest)
-        
+
         if west_projs is None:
             self.dbg(f"No west projects found, cannot locate module '{module_name}'")
             return None
-        
+
         projects = west_projs.get('projects', [])
-        
+
         # Search through all projects
         for project in projects:
             # Check if project name matches
             if hasattr(project, 'name') and project.name == module_name:
                 return Path(project.posixpath)
-            
+
             # Check if project path basename matches
             if hasattr(project, 'posixpath'):
                 project_path = Path(project.posixpath)
                 if project_path.name == module_name:
                     return project_path
-        
+
         self.dbg(f"Module '{module_name}' not found in west projects or mcux modules")
+
         return None
