@@ -167,7 +167,7 @@ void EQDC_Init(EQDC_Type *base, const eqdc_config_t *psConfig)
                (uint16_t)psConfig->homeEnableInitPosCounterMode;
 
     /* INDEX Preset trigger. */
-    ctrlTemp = (ctrlTemp & MCUX_MASK_INVERT_16(EQDC_CTRL_XIP_MASK | EQDC_CTRL_XNE_MASK)) |
+    ctrlTemp = (ctrlTemp & MCUX_MASK_INVERT_16((uint16_t)EQDC_CTRL_XIP_MASK | (uint16_t)EQDC_CTRL_XNE_MASK)) |
                (uint16_t)psConfig->indexPresetInitPosCounterMode;
 
     /* Reverse direction. */
@@ -212,11 +212,13 @@ void EQDC_Init(EQDC_Type *base, const eqdc_config_t *psConfig)
                                             (ctrl2Temp & MCUX_MASK_INVERT_16(EQDC_CTRL2_PMEN_MASK));
 
     /* Output pulse. */
-    ctrl2Temp = (psConfig->outputPulseMode) ? (ctrl2Temp | (uint16_t)EQDC_CTRL2_OUTCTL_MASK) :
+    ctrl2Temp = (psConfig->outputPulseMode == kEQDC_OutputPulseOnReadingPositionCounter) ?
+                                            (ctrl2Temp | (uint16_t)EQDC_CTRL2_OUTCTL_MASK) :
                                             (ctrl2Temp & MCUX_MASK_INVERT_16(EQDC_CTRL2_OUTCTL_MASK));
 
     /* Revolution count condition. */
-    ctrl2Temp = (psConfig->revolutionCountCondition) ? (ctrl2Temp | (uint16_t)EQDC_CTRL2_REVMOD_MASK) :
+    ctrl2Temp = (psConfig->revolutionCountCondition == kEQDC_RevolutionCountOnRollOverModulus) ?
+                                            (ctrl2Temp | (uint16_t)EQDC_CTRL2_REVMOD_MASK) :
                                             (ctrl2Temp & MCUX_MASK_INVERT_16(EQDC_CTRL2_REVMOD_MASK));
 
     /* Buffered register load (Update) mode select. */
@@ -274,10 +276,10 @@ void EQDC_Deinit(EQDC_Type *base)
  *    psConfig->enableTriggerHoldPositionRegisters  = false;
  *    psConfig->enableWatchdog                      = false;
  *    psConfig->watchdogTimeoutValue                = 0xFFFFU;
- *    psConfig->filterPhaseA                        = 0U;
- *    psConfig->filterPhaseB                        = 0U;
- *    psConfig->filterIndPre                        = 0U;
- *    psConfig->filterHomEna                        = 0U;
+ *    psConfig->filterPhaseA                        = false;
+ *    psConfig->filterPhaseB                        = false;
+ *    psConfig->filterIndPre                        = false;
+ *    psConfig->filterHomEna                        = false;
  *    psConfig->filterClockSourceselection          = false;
  *    psConfig->filterSampleCount                   = kEQDC_Filter3Samples;
  *    psConfig->filterSamplePeriod                  = 0U;
@@ -316,10 +318,10 @@ void EQDC_GetDefaultConfig(eqdc_config_t *psConfig)
     psConfig->enableTriggerHoldPositionRegisters  = false;
     psConfig->enableWatchdog                      = false;
     psConfig->watchdogTimeoutValue                = 0xFFFFU;
-    psConfig->filterPhaseA                        = 0U;
-    psConfig->filterPhaseB                        = 0U;
-    psConfig->filterIndPre                        = 0U;
-    psConfig->filterHomEna                        = 0U;
+    psConfig->filterPhaseA                        = false;
+    psConfig->filterPhaseB                        = false;
+    psConfig->filterIndPre                        = false;
+    psConfig->filterHomEna                        = false;
     psConfig->filterClockSourceselection          = false;
     psConfig->filterSampleCount                   = kEQDC_Filter3Samples;
     psConfig->filterSamplePeriod                  = 0U;

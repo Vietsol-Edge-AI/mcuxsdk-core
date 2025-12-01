@@ -666,7 +666,7 @@ static inline void EQDC_SetEqdcLdok(EQDC_Type *base)
  *
  * @param base EQDC peripheral base address.
  */
-static inline uint8_t EQDC_GetEqdcLdok(EQDC_Type *base)
+static inline uint16_t EQDC_GetEqdcLdok(EQDC_Type *base)
 {
     return base->CTRL & EQDC_CTRL_LDOK_MASK;
 }
