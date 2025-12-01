@@ -80,7 +80,7 @@ static status_t SPDIF_CalculateClockDivider(uint32_t sourceFreq, uint32_t target
  * Variables
  ******************************************************************************/
 /* Base pointer array */
-static SPDIF_Type *const s_spdifXcvrBases[] = {AUDIO_SPDIF};
+static SPDIF_Type *const s_spdifXcvrBases[] = SPDIF_BASE_PTRS;
 
 /*! @brief SPDIF handle pointer */
 static spdif_handle_t *s_spdifXcvrHandle[ARRAY_SIZE(s_spdifXcvrBases)][2];
