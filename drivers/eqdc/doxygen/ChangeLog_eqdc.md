@@ -1,5 +1,10 @@
 # EQDC
 
+## [2.3.2]
+
+- Bug Fix
+- Fixed violations of the CERT INT31-C.
+
 ## [2.3.1]
 
 - Bug Fix
