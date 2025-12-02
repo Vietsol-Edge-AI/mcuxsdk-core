@@ -1,5 +1,5 @@
 /*
- * Copyright 2021-2022 NXP
+ * Copyright 2021-2022, 2025 NXP
  *
  * SPDX-License-Identifier: BSD-3-Clause
  */
@@ -21,7 +21,7 @@
 /*! @name Driver version */
 /*! @{ */
 /*! @brief FREQME driver version 2.1.2. */
-#define FSL_FREQME_DRIVER_VERSION (MAKE_VERSION(2, 1, 2))
+#define FSL_FREQME_DRIVER_VERSION (MAKE_VERSION(2, 1, 3))
 /*! @} */
 
 /*!
