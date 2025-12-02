@@ -166,7 +166,6 @@ int32_t IMU_SendMsgsBlocking(imu_link_t link, const uint32_t *msgs, int32_t msgC
             if ((--poll_count) == 0u)
             {
                 return IMU_ERR_TIMEOUT;
-                break;
             }
 #endif
         }
