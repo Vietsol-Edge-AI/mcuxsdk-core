@@ -20,8 +20,8 @@
 
 /*! @name Driver version */
 /*! @{ */
-/*! @brief cache driver version 2.0.4. */
-#define FSL_CACHE_DRIVER_VERSION (MAKE_VERSION(2, 0, 5))
+/*! @brief cache driver version 2.0.6. */
+#define FSL_CACHE_DRIVER_VERSION (MAKE_VERSION(2, 0, 6))
 /*! @} */
 
 #if defined(FSL_FEATURE_SOC_L2CACHEC_COUNT) && FSL_FEATURE_SOC_L2CACHEC_COUNT

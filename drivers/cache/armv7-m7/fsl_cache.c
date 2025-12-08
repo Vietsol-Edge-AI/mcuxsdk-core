@@ -514,6 +514,12 @@ void L1CACHE_InvalidateICacheByRange(uint32_t address, uint32_t size_byte)
     while (size != 0U)
     {
         SCB->ICIMVAU = addr;
+
+        if ((UINT32_MAX - addr) < line_size)
+        {
+            break;
+        }
+
         addr += line_size;
 
         if (size > line_size)

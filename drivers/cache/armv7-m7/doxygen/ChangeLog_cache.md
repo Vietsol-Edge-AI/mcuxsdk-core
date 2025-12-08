@@ -1,5 +1,10 @@
 # CACHE ARMv7-M7
 
+## [2.0.6]
+
+- Bug Fixes
+  - Fix cache invalidate range function issue to prevent address overflow.
+
 ## [2.0.5]
 
 - Bug Fixes
