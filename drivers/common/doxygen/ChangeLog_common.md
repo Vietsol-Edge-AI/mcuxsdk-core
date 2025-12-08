@@ -8,6 +8,8 @@
 - Improvements
   - Make function `MSDK_EnableCpuCycleCounter` compatible with CMSIS-5 and CMSIS-6.
 
+- Bug Fixes
+  - Fixed build issue of CMSIS PACK BSP example caused by CMSIS 6.1 issue.
 ## [2.6.2]
 
 - Bug Fixes
