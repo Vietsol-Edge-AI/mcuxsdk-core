@@ -1,5 +1,9 @@
 # PWM
 
+## [2.9.4]
+- Bug Fixes
+  - Fixed CERT INT31-C issues.
+
 ## [2.9.3]
 - Improvements
   - Cherry-pick patch from hal_nxp repository. Enhanced input validation in PWM_SetupPwm by returning kStatus_InvalidArgument when the calculated pulse count exceeds UINT16_MAX, to prevent silent failures when assertions are disabled in production builds.
