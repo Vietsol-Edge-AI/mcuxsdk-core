@@ -43,6 +43,7 @@
 #define XBAR_SEL_MAX_MASK  ((xbar_reg_t)0xFFU)
 #endif
 
+#define XBAR_CTRL_CTRL_MASK  ((xbar_reg_t)0x0FU) /* All control bits in CTRL register */
 #define XBAR_CTRL_WP_MASK ((uint32_t)(1UL << 31U))
 
 /* Array of XBAR clock name. */
@@ -306,6 +307,7 @@ status_t XBAR_SetOutputSignalConfig(xbar_output_signal_t output, const xbar_cont
 
     if (status == kStatus_Success)
     {
+        MCUX_REG_BIT_CLEAR32(*ctrlRegAddr, XBAR_CTRL_CTRL_MASK);
         *ctrlRegAddr |= ((((xbar_reg_t)controlConfig->activeEdge)) << 2) |
                         (((xbar_reg_t)controlConfig->requestType));
     }
@@ -316,6 +318,7 @@ status_t XBAR_SetOutputSignalConfig(xbar_output_signal_t output, const xbar_cont
 
     if (status == kStatus_Success)
     {
+        MCUX_REG_BIT_CLEAR16(*ctrlRegAddr, XBAR_CTRL_CTRL_MASK << shiftInReg);
         *ctrlRegAddr |= ((((xbar_reg_t)controlConfig->activeEdge) << shiftInReg) << 2) |
                         (((xbar_reg_t)controlConfig->requestType) << shiftInReg);
     }
