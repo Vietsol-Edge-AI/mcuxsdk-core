@@ -541,6 +541,7 @@ status_t FLEXCAN_EnterFreezeMode(CAN_Type *base)
     uint32_t u32TempIMASK1   = 0U;
 #if defined(CAN_IMASK2_BUF63TO32M_MASK)
     uint32_t u32TempIMASK2 = 0U;
+    int maxMB = FSL_FEATURE_FLEXCAN_HAS_MESSAGE_BUFFER_MAX_NUMBERn(base);
 #endif
 
     /* Step1: set FRZ enable in MCR. */
@@ -581,7 +582,7 @@ status_t FLEXCAN_EnterFreezeMode(CAN_Type *base)
             u32TempMCR    = base->MCR;
             u32TempIMASK1 = base->IMASK1;
 #if defined(CAN_IMASK2_BUF63TO32M_MASK)
-            if (FSL_FEATURE_FLEXCAN_HAS_MESSAGE_BUFFER_MAX_NUMBERn(base) > 32)
+            if (maxMB > 32)
             {
                 u32TempIMASK2 = base->IMASK2;
             }
@@ -609,7 +610,7 @@ status_t FLEXCAN_EnterFreezeMode(CAN_Type *base)
             /* Reconfig IMASK. */
             base->IMASK1 = u32TempIMASK1;
 #if defined(CAN_IMASK2_BUF63TO32M_MASK)
-            if (FSL_FEATURE_FLEXCAN_HAS_MESSAGE_BUFFER_MAX_NUMBERn(base) > 32)
+            if (maxMB > 32)
             {
                 base->IMASK2 = u32TempIMASK2;
             }
@@ -623,7 +624,7 @@ status_t FLEXCAN_EnterFreezeMode(CAN_Type *base)
         u32TempMCR    = base->MCR;
         u32TempIMASK1 = base->IMASK1;
 #if defined(CAN_IMASK2_BUF63TO32M_MASK)
-        if (FSL_FEATURE_FLEXCAN_HAS_MESSAGE_BUFFER_MAX_NUMBERn(base) > 32)
+        if (maxMB > 32)
         {
             u32TempIMASK2 = base->IMASK2;
         }
@@ -658,7 +659,7 @@ status_t FLEXCAN_EnterFreezeMode(CAN_Type *base)
         /* Step9A: reconfig IMASK. */
         base->IMASK1 = u32TempIMASK1;
 #if defined(CAN_IMASK2_BUF63TO32M_MASK)
-        if (FSL_FEATURE_FLEXCAN_HAS_MESSAGE_BUFFER_MAX_NUMBERn(base) > 32)
+        if (maxMB > 32)
         {
             base->IMASK2 = u32TempIMASK2;
         }
@@ -674,6 +675,7 @@ status_t FLEXCAN_EnterFreezeMode(CAN_Type *base)
     uint32_t u32TempIMASK1   = 0U;
 #if defined(CAN_IMASK2_BUF63TO32M_MASK)
     uint32_t u32TempIMASK2   = 0U;
+    int maxMB = FSL_FEATURE_FLEXCAN_HAS_MESSAGE_BUFFER_MAX_NUMBERn(base);
 #endif
 
     /* Step1: set FRZ and HALT bit enable in MCR. */
@@ -700,7 +702,7 @@ status_t FLEXCAN_EnterFreezeMode(CAN_Type *base)
         u32TempMCR    = base->MCR;
         u32TempIMASK1 = base->IMASK1;
 #if defined(CAN_IMASK2_BUF63TO32M_MASK)
-        if (FSL_FEATURE_FLEXCAN_HAS_MESSAGE_BUFFER_MAX_NUMBERn(base) > 32)
+        if (maxMB > 32)
         {
             u32TempIMASK2 = base->IMASK2;
         }
@@ -725,7 +727,7 @@ status_t FLEXCAN_EnterFreezeMode(CAN_Type *base)
         /* Step8: reconfig IMASK. */
         base->IMASK1 = u32TempIMASK1;
 #if defined(CAN_IMASK2_BUF63TO32M_MASK)
-        if (FSL_FEATURE_FLEXCAN_HAS_MESSAGE_BUFFER_MAX_NUMBERn(base) > 32)
+        if (maxMB > 32)
         {
             base->IMASK2 = u32TempIMASK2;
         }
@@ -887,10 +889,11 @@ static status_t FLEXCAN_Reset(CAN_Type *base)
      */
     assert(0U == (base->MCR & CAN_MCR_MDIS_MASK));
 
-    int8_t i;
 #if FLEXCAN_MODULE_TIMEOUT
     uint32_t timeout = FLEXCAN_MODULE_TIMEOUT;
 #endif
+    int maxMB = FSL_FEATURE_FLEXCAN_HAS_MESSAGE_BUFFER_MAX_NUMBERn(base);
+    int i;
 
 #if (defined(FSL_FEATURE_FLEXCAN_HAS_DOZE_MODE_SUPPORT) && FSL_FEATURE_FLEXCAN_HAS_DOZE_MODE_SUPPORT)
     if (1 == (FSL_FEATURE_FLEXCAN_INSTANCE_HAS_DOZE_MODE_SUPPORTn(base)))
@@ -935,11 +938,9 @@ static status_t FLEXCAN_Reset(CAN_Type *base)
 
     /* Reset MCR register. */
 #if (defined(FSL_FEATURE_FLEXCAN_HAS_GLITCH_FILTER) && FSL_FEATURE_FLEXCAN_HAS_GLITCH_FILTER)
-    base->MCR |= CAN_MCR_WRNEN_MASK | CAN_MCR_WAKSRC_MASK |
-                 CAN_MCR_MAXMB((uint32_t)FSL_FEATURE_FLEXCAN_HAS_MESSAGE_BUFFER_MAX_NUMBERn(base) - 1U);
+    base->MCR |= CAN_MCR_WRNEN_MASK | CAN_MCR_WAKSRC_MASK | CAN_MCR_MAXMB((uint32_t)maxMB - 1U);
 #else
-    base->MCR |=
-        CAN_MCR_WRNEN_MASK | CAN_MCR_MAXMB((uint32_t)FSL_FEATURE_FLEXCAN_HAS_MESSAGE_BUFFER_MAX_NUMBERn(base) - 1U);
+    base->MCR |= CAN_MCR_WRNEN_MASK | CAN_MCR_MAXMB((uint32_t)maxMB - 1U);
 #endif
 
     /* Reset CTRL1 and CTRL2 register, default to eanble SMP feature which enable three sample point to determine the
@@ -969,13 +970,13 @@ static status_t FLEXCAN_Reset(CAN_Type *base)
 
 #if (defined(FSL_FEATURE_FLEXCAN_HAS_HIGH_RESOLUTION_TIMESTAMP) && FSL_FEATURE_FLEXCAN_HAS_HIGH_RESOLUTION_TIMESTAMP)
     /* Clean High Resolution Timestamp registers. */
-    for (i = 0; i < FSL_FEATURE_FLEXCAN_HAS_MESSAGE_BUFFER_MAX_NUMBERn(base); i++)
+    for (i = 0; i < maxMB; i++)
     {
         base->HR_TIME_STAMP[i] = 0;
     }
 #endif
     /* Clean all individual Rx Mask of Message Buffers. */
-    for (i = 0; i < FSL_FEATURE_FLEXCAN_HAS_MESSAGE_BUFFER_MAX_NUMBERn(base); i++)
+    for (i = 0; i < maxMB; i++)
     {
         base->RXIMR[i] = 0x3FFFFFFF;
     }
@@ -1076,14 +1077,17 @@ void FLEXCAN_Init(CAN_Type *base, const flexcan_config_t *pConfig, uint32_t sour
 {
     /* Assertion. */
     assert(NULL != pConfig);
-    assert((pConfig->maxMbNum > 0U) &&
-           (pConfig->maxMbNum <= (uint8_t)FSL_FEATURE_FLEXCAN_HAS_MESSAGE_BUFFER_MAX_NUMBERn(base)));
 
     uint32_t mcrTemp;
     uint32_t ctrl1Temp;
     uint32_t ctrl2Temp;
 #if !(defined(FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL) && FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL)
     uint32_t instance;
+#endif
+#if !defined(NDEBUG)
+    int maxMB = FSL_FEATURE_FLEXCAN_HAS_MESSAGE_BUFFER_MAX_NUMBERn(base);
+    assert(maxMB != -1);
+    assert((pConfig->maxMbNum > 0U) && (pConfig->maxMbNum <= (uint8_t)maxMB));
 #endif
     flexcan_timing_config_t timingCfg = pConfig->timingConfig;
     /* FlexCAN classical CAN frame or CAN FD frame nominal phase timing setting formula:
@@ -1329,6 +1333,10 @@ void FLEXCAN_FDInit(
     assert((uint32_t)dataSize <= 3U);
     assert(((pConfig->bitRate < pConfig->bitRateFD) && brs) || ((pConfig->bitRate == pConfig->bitRateFD) && (!brs)));
 
+#if defined(CAN_FDCTRL_MBDSR1_MASK)
+    int maxMB = FSL_FEATURE_FLEXCAN_HAS_MESSAGE_BUFFER_MAX_NUMBERn(base);
+#endif
+
     uint32_t fdctrl                   = 0U;
     flexcan_timing_config_t timingCfg = pConfig->timingConfig;
     /* FlexCAN FD frame data phase timing setting formula:
@@ -1381,19 +1389,19 @@ void FLEXCAN_FDInit(
     /* Before use "|=" operation for multi-bits field, CPU should clean previous Setting. */
     fdctrl = (fdctrl & ~CAN_FDCTRL_MBDSR0_MASK) | CAN_FDCTRL_MBDSR0(dataSize);
 #if defined(CAN_FDCTRL_MBDSR1_MASK)
-    if (FSL_FEATURE_FLEXCAN_HAS_MESSAGE_BUFFER_MAX_NUMBERn(base) > 32)
+    if (maxMB > 32)
     {
         fdctrl = (fdctrl & ~CAN_FDCTRL_MBDSR1_MASK) | CAN_FDCTRL_MBDSR1(dataSize);
     }
 #endif
 #if defined(CAN_FDCTRL_MBDSR2_MASK)
-    if (FSL_FEATURE_FLEXCAN_HAS_MESSAGE_BUFFER_MAX_NUMBERn(base) > 64)
+    if (maxMB > 64)
     {
         fdctrl = (fdctrl & ~CAN_FDCTRL_MBDSR2_MASK) | CAN_FDCTRL_MBDSR2(dataSize);
     }
 #endif
 #if defined(CAN_FDCTRL_MBDSR3_MASK)
-    if (FSL_FEATURE_FLEXCAN_HAS_MESSAGE_BUFFER_MAX_NUMBERn(base) > 96)
+    if (maxMB > 96)
     {
         fdctrl = (fdctrl & ~CAN_FDCTRL_MBDSR3_MASK) | CAN_FDCTRL_MBDSR3(dataSize);
     }
@@ -2722,8 +2730,10 @@ void FLEXCAN_SetRxFifoConfig(CAN_Type *base, const flexcan_rx_fifo_config_t *pRx
     volatile uint32_t *mbAddr;
     uint8_t i, j, k, rffn = 0, numMbOccupy;
 #if !defined(NDEBUG)
+    int maxMB = FSL_FEATURE_FLEXCAN_HAS_MESSAGE_BUFFER_MAX_NUMBERn(base);
+    assert(maxMB != -1);
     uint32_t setupMbIdx = 0;
-    uint32_t maxMbIdx = (uint32_t)FSL_FEATURE_FLEXCAN_HAS_MESSAGE_BUFFER_MAX_NUMBERn(base) - 1U;
+    uint32_t maxMbIdx = (uint32_t)maxMB - 1U;
 #endif
 
     /* Enter Freeze Mode. */
@@ -4479,7 +4489,7 @@ void FLEXCAN_TransferAbortSend(CAN_Type *base, flexcan_handle_t *handle, uint8_t
     timestamp                = (uint16_t)((base->MB[mbIdx].CS & CAN_CS_TIME_STAMP_MASK) >> CAN_CS_TIME_STAMP_SHIFT);
     handle->timestamp[mbIdx] = timestamp;
 
-    /* Clean Message Buffer. */
+    /* Clean and inactivate Message Buffer. */
     FLEXCAN_SetTxMbConfig(base, mbIdx, true);
 
     handle->mbState[mbIdx] = (uint8_t)kFLEXCAN_StateIdle;
@@ -4561,7 +4571,7 @@ void FLEXCAN_TransferFDAbortSend(CAN_Type *base, flexcan_handle_t *handle, uint8
     timestamp                = (uint16_t)((mbAddr[offset] & CAN_CS_TIME_STAMP_MASK) >> CAN_CS_TIME_STAMP_SHIFT);
     handle->timestamp[mbIdx] = timestamp;
 
-    /* Clean Message Buffer. */
+    /* Clean and inactivate Message Buffer. */
     FLEXCAN_SetFDTxMbConfig(base, mbIdx, true);
 
     handle->mbState[mbIdx] = (uint8_t)kFLEXCAN_StateIdle;
@@ -4704,41 +4714,43 @@ uint32_t FLEXCAN_GetTimeStamp(flexcan_handle_t *handle, uint8_t mbIdx)
  */
 static bool FLEXCAN_CheckUnhandleInterruptEvents(CAN_Type *base)
 {
-    uint64_t tempmask;
-    uint64_t tempflag;
+    uint32_t tempmask;
+    uint32_t tempflag;
     bool fgRet = false;
+#if defined(CAN_IMASK2_BUF63TO32M_MASK)
+    int maxMB = FSL_FEATURE_FLEXCAN_HAS_MESSAGE_BUFFER_MAX_NUMBERn(base);
+#endif
 
     if (0U == (FLEXCAN_GetStatusFlags(base) &   \
               (FLEXCAN_ERROR_AND_STATUS_INT_FLAG | FLEXCAN_WAKE_UP_FLAG | FLEXCAN_ENHANCED_RX_FIFO_INT_FLAG)))
     {
         /* If no error, wake_up or enhanced RX FIFO status, Checking whether exist MB interrupt status and legacy RX
          * FIFO interrupt status */
-        tempmask = (uint64_t)base->IMASK1;
-        tempflag = (uint64_t)base->IFLAG1;
+        tempmask = base->IMASK1;
+        tempflag = base->IFLAG1;
+        fgRet = (0U != (tempmask & tempflag));
 #if defined(CAN_IMASK2_BUF63TO32M_MASK)
-        if (FSL_FEATURE_FLEXCAN_HAS_MESSAGE_BUFFER_MAX_NUMBERn(base) > 32)
+        if (maxMB > 32 && fgRet == false)
         {
-            tempmask |= ((uint64_t)base->IMASK2) << 32;
-            tempflag |= ((uint64_t)base->IFLAG2) << 32;
+            tempmask = base->IMASK2;
+            tempflag = base->IFLAG2;
+            fgRet = (0U != (tempmask & tempflag));
         }
 #endif
-        fgRet = (0U != (tempmask & tempflag));
 #if defined(CAN_IMASK3_BUF95TO64M_MASK)
-        if (FSL_FEATURE_FLEXCAN_HAS_MESSAGE_BUFFER_MAX_NUMBERn(base) > 64)
+        if (maxMB > 64 && fgRet == false)
         {
-            if (0U != (base->IMASK3 & base->IFLAG3))
-            {
-                fgRet = true;
-            }
+            tempmask = base->IMASK3;
+            tempflag = base->IFLAG3;
+            fgRet = (0U != (tempmask & tempflag));
         }
 #endif
 #if defined(CAN_IMASK4_BUF127TO96M_MASK)
-        if (FSL_FEATURE_FLEXCAN_HAS_MESSAGE_BUFFER_MAX_NUMBERn(base) > 96)
+        if (maxMB > 96 && fgRet == false)
         {
-            if (0U != (base->IMASK4 & base->IFLAG4))
-            {
-                fgRet = true;
-            }
+            tempmask = base->IMASK4;
+            tempflag = base->IFLAG4;
+            fgRet = (0U != (tempmask & tempflag));
         }
 #endif
     }
@@ -4746,8 +4758,8 @@ static bool FLEXCAN_CheckUnhandleInterruptEvents(CAN_Type *base)
     else if (0U != (FLEXCAN_GetStatusFlags(base) & FLEXCAN_ENHANCED_RX_FIFO_INT_FLAG))
     {
         /* Checking whether exist enhanced RX FIFO interrupt status. */
-        tempmask = (uint64_t)base->ERFIER;
-        tempflag = (uint64_t)base->ERFSR;
+        tempmask = base->ERFIER;
+        tempflag = base->ERFSR;
         fgRet    = (0U != (tempmask & tempflag));
     }
 #endif
@@ -4964,22 +4976,23 @@ static status_t FLEXCAN_SubHandlerForDataTransfered(CAN_Type *base,
 {
     status_t status = kStatus_FLEXCAN_UnHandled;
     uint32_t result = 0xFFU;
+    int maxMB = FSL_FEATURE_FLEXCAN_HAS_MESSAGE_BUFFER_MAX_NUMBERn(base);
 
     uint32_t intflag[4] = {(base->IMASK1 & base->IFLAG1), 0U, 0U, 0U};
 #if defined(CAN_IMASK2_BUF63TO32M_MASK)
-    if (FSL_FEATURE_FLEXCAN_HAS_MESSAGE_BUFFER_MAX_NUMBERn(base) > 32)
+    if (maxMB > 32)
     {
         intflag[1] = base->IMASK2 & base->IFLAG2;
     }
 #endif
 #if defined(CAN_IMASK3_BUF95TO64M_MASK)
-    if (FSL_FEATURE_FLEXCAN_HAS_MESSAGE_BUFFER_MAX_NUMBERn(base) > 64)
+    if (maxMB > 64)
     {
         intflag[2] = base->IMASK3 & base->IFLAG3;
     }
 #endif
 #if defined(CAN_IMASK4_BUF127TO96M_MASK)
-    if (FSL_FEATURE_FLEXCAN_HAS_MESSAGE_BUFFER_MAX_NUMBERn(base) > 96)
+    if (maxMB > 96)
     {
         intflag[3] = base->IMASK4 & base->IFLAG4;
     }
@@ -5015,7 +5028,7 @@ static status_t FLEXCAN_SubHandlerForDataTransfered(CAN_Type *base,
     }
 
     /* find Message to deal with. */
-    if (result < (uint32_t)FSL_FEATURE_FLEXCAN_HAS_MESSAGE_BUFFER_MAX_NUMBERn(base))
+    if (result < (uint32_t)maxMB)
     {
         /* Solve Legacy Rx FIFO interrupt. */
         if (((uint8_t)kFLEXCAN_StateIdle != handle->rxFifoState) && (result <= (uint32_t)CAN_IFLAG1_BUF7I_SHIFT) &&
@@ -5171,6 +5184,9 @@ void FLEXCAN_TransferHandleIRQ(CAN_Type *base, flexcan_handle_t *handle)
 #else
     uint32_t result = 0U;
 #endif
+    int maxMB = FSL_FEATURE_FLEXCAN_HAS_MESSAGE_BUFFER_MAX_NUMBERn(base);
+    assert(maxMB != -1);
+
     do
     {
         /* Get Current FlexCAN Module Error and Status. */
@@ -5204,8 +5220,7 @@ void FLEXCAN_TransferHandleIRQ(CAN_Type *base, flexcan_handle_t *handle)
         else
         {
             /* To handle Message Buffer or Legacy Rx FIFO transfer. */
-            status = FLEXCAN_SubHandlerForDataTransfered(base, handle,
-                0U, (uint32_t)FSL_FEATURE_FLEXCAN_HAS_MESSAGE_BUFFER_MAX_NUMBERn(base) - 1U, &mbNum);
+            status = FLEXCAN_SubHandlerForDataTransfered(base, handle, 0U, (uint32_t)maxMB - 1U, &mbNum);
             result = mbNum;
         }
 
@@ -5246,8 +5261,7 @@ void FLEXCAN_MbHandleIRQ(CAN_Type *base, flexcan_handle_t *handle, uint32_t star
     uint32_t tempflag;
     bool fgRet = false;
 #if defined(CAN_IMASK2_BUF63TO32M_MASK)
-    uint32_t maxMB;
-    maxMB = FSL_FEATURE_FLEXCAN_HAS_MESSAGE_BUFFER_MAX_NUMBERn(base);
+    int maxMB = FSL_FEATURE_FLEXCAN_HAS_MESSAGE_BUFFER_MAX_NUMBERn(base);
 #endif
     mbNum = 0xFFU;
 
@@ -5266,7 +5280,7 @@ void FLEXCAN_MbHandleIRQ(CAN_Type *base, flexcan_handle_t *handle, uint32_t star
         tempflag = base->IFLAG1;
         fgRet = (0U != (tempmask & tempflag));
 #if defined(CAN_IMASK2_BUF63TO32M_MASK)
-        if (maxMB > 32U && fgRet == false)
+        if (maxMB > 32 && fgRet == false)
         {
             tempmask = base->IMASK2;
             tempflag = base->IFLAG2;
@@ -5274,7 +5288,7 @@ void FLEXCAN_MbHandleIRQ(CAN_Type *base, flexcan_handle_t *handle, uint32_t star
         }
 #endif
 #if defined(CAN_IMASK3_BUF95TO64M_MASK)
-        if (maxMB > 64U && fgRet == false)
+        if (maxMB > 64 && fgRet == false)
         {
             tempmask = base->IMASK3;
             tempflag = base->IFLAG3;
@@ -5282,7 +5296,7 @@ void FLEXCAN_MbHandleIRQ(CAN_Type *base, flexcan_handle_t *handle, uint32_t star
         }
 #endif
 #if defined(CAN_IMASK4_BUF127TO96M_MASK)
-        if (maxMB > 96U && fgRet == false)
+        if (maxMB > 96 && fgRet == false)
         {
             tempmask = base->IMASK4;
             tempflag = base->IFLAG4;
