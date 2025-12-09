@@ -1,4 +1,4 @@
-# Copyright 2024 NXP
+# Copyright 2024-2025 NXP
 #
 # SPDX-License-Identifier: BSD-3-Clause
 
@@ -6,6 +6,11 @@ config CPU_CORTEX_M
     bool
     help
       This option signifies the use of a CPU of the Cortex-M family.
+
+config MCUX_PRJSEG_config.arm.core.cm3
+    bool
+    select CPU_CORTEX_M
+    default y if MCUX_HW_CORE_CM3
 
 config MCUX_PRJSEG_config.arm.core.cm4
     bool
