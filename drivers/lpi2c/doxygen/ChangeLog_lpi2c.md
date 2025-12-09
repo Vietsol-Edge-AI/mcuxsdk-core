@@ -1,5 +1,10 @@
 # LPI2C
 
+## [2.6.4]
+
+- Bug Fixes
+  - Removed unused flag kLPI2C_TransferRepeatedStartFlag.
+
 ## [2.6.3]
 
 - Bug Fixes

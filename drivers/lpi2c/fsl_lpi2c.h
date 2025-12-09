@@ -26,7 +26,7 @@
  * @{
  */
 /*! @brief LPI2C driver version. */
-#define FSL_LPI2C_DRIVER_VERSION (MAKE_VERSION(2, 6, 3))
+#define FSL_LPI2C_DRIVER_VERSION (MAKE_VERSION(2, 6, 4))
 /*! @} */
 
 /*! @brief Retry times for waiting flag. */
@@ -227,7 +227,6 @@ enum _lpi2c_master_transfer_flags
 {
     kLPI2C_TransferDefaultFlag       = 0x00U, /*!< Transfer starts with a start signal, stops with a stop signal. */
     kLPI2C_TransferNoStartFlag       = 0x01U, /*!< Don't send a start condition, address, and sub address */
-    kLPI2C_TransferRepeatedStartFlag = 0x02U, /*!< Send a repeated start condition */
     kLPI2C_TransferNoStopFlag        = 0x04U, /*!< Don't send a stop condition. */
 };
 
