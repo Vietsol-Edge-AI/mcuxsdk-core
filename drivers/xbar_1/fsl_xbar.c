@@ -25,22 +25,22 @@
  *        xbar instance index(16bits)      xbar input/output signal index(16bits)
  *
  */
-#define XBAR_INST_FROM_INPUT(input)   ((uint16_t)(input >> 16U))
-#define XBAR_INST_FROM_OUTPUT(output) ((uint16_t)(output >> 16U))
+#define XBAR_INST_FROM_INPUT(input)   ((uint16_t)((uint32_t)(input) >> 16U))
+#define XBAR_INST_FROM_OUTPUT(output) ((uint16_t)((uint32_t)(output) >> 16U))
 
-#define XBAR_EXTRACT_INPUT(input)   ((uint16_t)(input & 0xFFFFU))
-#define XBAR_EXTRACT_OUTPUT(output) ((uint16_t)(output& 0xFFFFU))
+#define XBAR_EXTRACT_INPUT(input)   ((uint16_t)((uint32_t)(input) & 0xFFFFU))
+#define XBAR_EXTRACT_OUTPUT(output) ((uint16_t)((uint32_t)(output) & 0xFFFFU))
 
 
 #define XBAR_CTRL_STAT_SHIFT 4U
-#define XBAR_CTRL_STAT_MASK  ((xbar_reg_t)1U << 4U)
+#define XBAR_CTRL_STAT_MASK  ((xbar_reg_t)((xbar_reg_t)1U << 4U))
 
 #if defined(FSL_FEATURE_XBAR_DSC_REG_WIDTH) && (FSL_FEATURE_XBAR_DSC_REG_WIDTH == 32)
-#define XBAR_CTRL_ALL_STAT_MASK (XBAR_CTRL_STAT_MASK)
-#define XBAR_SEL_MAX_MASK  (0x1FFU)
+#define XBAR_CTRL_ALL_STAT_MASK ((xbar_reg_t)XBAR_CTRL_STAT_MASK)
+#define XBAR_SEL_MAX_MASK  ((xbar_reg_t)0x1FFU)
 #else
-#define XBAR_CTRL_ALL_STAT_MASK (XBAR_CTRL_STAT_MASK | (XBAR_CTRL_STAT_MASK << 8U))
-#define XBAR_SEL_MAX_MASK  (0xFFU)
+#define XBAR_CTRL_ALL_STAT_MASK ((xbar_reg_t)XBAR_CTRL_STAT_MASK | ((xbar_reg_t)XBAR_CTRL_STAT_MASK << 8U))
+#define XBAR_SEL_MAX_MASK  ((xbar_reg_t)0xFFU)
 #endif
 
 #define XBAR_CTRL_WP_MASK ((uint32_t)(1UL << 31U))
@@ -192,7 +192,7 @@ status_t XBAR_SetSignalsConnection(xbar_input_signal_t input, xbar_output_signal
     {
         selRegAddr  = s_xbarInfo[inst - 1U].baseAddr + ((s_xbarInfo[inst - 1U].regSelOffset + outputIndex) / 2U);
         shiftInReg  = (uint8_t)(uint16_t)(8U * (outputIndex % 2U));
-        *selRegAddr = (*selRegAddr & ~((xbar_reg_t)XBAR_SEL_MAX_MASK << shiftInReg)) | (inputIndex << shiftInReg);
+        MCUX_REG_MODIFY16(*selRegAddr, (XBAR_SEL_MAX_MASK << shiftInReg), (inputIndex << shiftInReg));
         status      = kStatus_Success;
     }
 #endif
@@ -226,7 +226,7 @@ status_t XBAR_ClearOutputStatusFlag(xbar_output_signal_t output)
 
     if (status == kStatus_Success)
     {
-        *ctrlRegAddr = (*ctrlRegAddr & (~XBAR_CTRL_ALL_STAT_MASK)) | (XBAR_CTRL_STAT_MASK << shiftInReg);
+        MCUX_REG_MODIFY16(*ctrlRegAddr, XBAR_CTRL_ALL_STAT_MASK, XBAR_CTRL_STAT_MASK << shiftInReg);
     }
 #endif
 
@@ -295,6 +295,12 @@ status_t XBAR_SetOutputSignalConfig(xbar_output_signal_t output, const xbar_cont
 {
     status_t status;
     volatile xbar_reg_t *ctrlRegAddr;
+
+    if ((controlConfig->activeEdge >= kXBAR_EdgeMax) || (controlConfig->requestType >= kXBAR_RequestMax))
+    {
+        return kStatus_InvalidArgument;
+    }
+
 #if defined(FSL_FEATURE_XBAR_DSC_REG_WIDTH) && (FSL_FEATURE_XBAR_DSC_REG_WIDTH == 32)
     status = XBAR_GetCtrlReg(output, &ctrlRegAddr);
 
