@@ -1,5 +1,10 @@
 # LPI2C_EDMA
 
+## [2.4.7]
+
+- Bug Fixes
+  - Fixed incorrect TX FIFO size (maxTxFifo) in LPI2C_MasterTransferEDMA() and LPI2C_MasterTransferEdmaHandleIRQ().
+
 ## [2.4.6]
 
 - Bug Fixes
