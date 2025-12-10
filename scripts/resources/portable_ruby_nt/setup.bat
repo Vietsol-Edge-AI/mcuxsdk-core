@@ -7,7 +7,12 @@ rem TODO: Add a small exe in future to make this program/script better.
 rem Cannot support specified install directory as the script cannot find it when need upgrade.
 setlocal enabledelayedexpansion
 
-set DEFAULT_INSTALL_DIR=C:\portable_ruby
+rem Use first command line argument if provided, otherwise use portable-ruby under home directory
+if not "%~1"=="" (
+    set DEFAULT_INSTALL_DIR=%~1
+) else (
+    set DEFAULT_INSTALL_DIR=%USERPROFILE%\portable_ruby
+)
 set RUBY_BIN=%DEFAULT_INSTALL_DIR%\bin
 set WORKSPACE=%cd%
 cd /D "%~dp0"
@@ -55,7 +60,7 @@ reg query HKCU\Environment /v PATH 2>&1 >nul && (
     )
     echo Please restart the terminal to make the PATH update workable.
 ) || (
-    echo Please add "C:\portable_ruby\bin" at top of your user environment variables.
+    echo Please add "%RUBY_BIN%" at top of your user environment variables.
 )
 goto exit
 

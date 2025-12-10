@@ -40,10 +40,10 @@ class InstallRuby(WestCommand):
             ''
         )
         if os.name == 'nt':
-            self.install_path = 'C:\\portable_ruby'
+            self.install_path = Path.home()
             self.version = RB_VERION_NT
         else:
-            self.install_path = Path.home() / 'portable-ruby'
+            self.install_path = Path.home()
             self.version = RB_VERSION_POSIX
 
     def do_add_parser(self, parser_adder):
@@ -57,13 +57,12 @@ class InstallRuby(WestCommand):
     # TODO Align windows archive with linux/macos format
     def install_ruby_for_windows(self):
         cwd = os.getcwd()
+        ruby_path = self.install_path / 'portable-ruby'
         install_script_path = SCRIPT_DIR / 'resources/portable_ruby_nt/setup.bat'
-        if not install_script_path.is_file():
-            self.die(f"Cannot find {install_script_path.as_posix()}, please run 'west update sdk_generator' and try again")
-        self.run_subprocess([install_script_path.as_posix()], shell=True)
+        self.run_subprocess([install_script_path.as_posix(), str(ruby_path)], shell=True)
 
         os.chdir(cwd)
-        return 'C:\\portable_ruby\\bin'
+        return (install_script_path / 'bin').as_posix()
 
     def install_ruby_for_linux(self, sys_arch):
         return self._for_posix(sys_arch)
@@ -74,10 +73,10 @@ class InstallRuby(WestCommand):
     def do_run(self, args, unknown_args):
         if args.path:
             input_path = Path(args.path).resolve()
-            if input_path.exists():
-                self.install_path = input_path
-            else:
-                self.wrn(f'{args.path} is not a valid path, will use the default user home path.')
+            if not input_path.exists():
+                self.wrn(f'{args.path} does not exist, will create it.')
+                input_path.mkdir(parents=True, exist_ok=True)
+            self.install_path = input_path
 
         arch = platform.machine()
         sys_name = platform.system()
@@ -109,7 +108,7 @@ class InstallRuby(WestCommand):
 
     def _for_posix(self, sys_arch):
         if self._extract_archive(sys_arch, SCRIPT_DIR / 'resources' / f'portable_ruby_{sys_arch}.tar.xz'):
-            ruby_bin = (self.install_path / self.version / 'bin').as_posix()
+            ruby_bin = (self.install_path / 'portable-ruby' / self.version / 'bin').as_posix()
             sys_rb = shutil.which("ruby")
             if sys_rb and ruby_bin not in sys_rb:
                 self.inf(f"""The active ruby is {sys_rb}
@@ -119,17 +118,18 @@ Please append following line in your shell profile like .zshrc or .bashrc:
         return None
 
     def _extract_archive(self, sys_arch: str, archive_path: Path):
+        ruby_path = self.install_path / 'portable-ruby'
         if not archive_path.exists():
             self.err(f'{archive_path} does not exist!')
             return False
         file_md5 = get_file_md5(archive_path)
-        if (checksum_file := self.install_path / file_md5).exists():
+        if (checksum_file := ruby_path / file_md5).exists():
             self.inf('You have already install the latest portable ruby')
             return True
-        if self.install_path.exists():
-            shutil.rmtree(self.install_path)
-        self.banner(f"Start extract portable_ruby for {sys_arch}, it was created based on {PORTABLE_RUBY_BASE}")
-        # The archive already have 'portable_ruby' wrapper
-        shutil.unpack_archive(archive_path, extract_dir=self.install_path.parent)
+        if ruby_path.exists():
+            shutil.rmtree(ruby_path)
+        self.banner(f"Start extract portable-ruby for {sys_arch}, it was created based on {PORTABLE_RUBY_BASE}")
+        # The archive already have 'portable-ruby' wrapper
+        shutil.unpack_archive(archive_path, extract_dir=self.install_path)
         open(checksum_file, 'w').close()
         return True
