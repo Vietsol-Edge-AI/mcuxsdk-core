@@ -118,7 +118,7 @@ if (${CONFIG_TOOLCHAIN} IN_LIST GUI_PROJECT_SUPPORTED_TOOLCHAIN AND FOUND_RUBY_E
 else ()
     add_custom_target(
             guiproject
-            COMMAND ${CMAKE_COMMAND} -E echo "Program has stopped without project generation. Please check if ruby is installed. If not, you can refer ${ruby_install_link}. And please make sure the specified toolchain is one of ${GUI_PROJECT_SUPPORTED_TOOLCHAIN}."
+            COMMAND ${CMAKE_COMMAND} -E echo "Skip GUI project generation. You can refer ${ruby_install_link} to install ruby. And please ensure the specified toolchain is one of ${GUI_PROJECT_SUPPORTED_TOOLCHAIN}."
             VERBATIM)
 endif ()
 
@@ -146,7 +146,7 @@ add_custom_target(
 else ()
     add_custom_target(
             standalone_project
-            COMMAND ${CMAKE_COMMAND} -E echo "Program has stopped without project generation. Please check if ruby is installed. If not, you can refer ${ruby_install_link}. And please make sure the specified toolchain is one of ${STANDALONE_PROJECT_SUPPORTED_TOOLCHAIN}."
+            COMMAND ${CMAKE_COMMAND} -E echo "Skip standalone project generation. You can refer ${ruby_install_link} to install ruby. And please ensure the specified toolchain is one of ${STANDALONE_PROJECT_SUPPORTED_TOOLCHAIN}."
             VERBATIM)
 endif ()
 
