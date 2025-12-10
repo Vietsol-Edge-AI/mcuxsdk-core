@@ -282,11 +282,8 @@ module Internal
         end
 
         def standardCppLibrary(flag, *_args, **_kargs)
-          listEntryValue_nodes = @operations.xml.xpath('//BuildTarget/BuildSettings/OverriddenSettings/OverriddenSettingsEntry/value')
-          listEntryValue_nodes.each do |listEntryValue_node|
-            value_node = @operations.create_option_node('OverriddenSettings', "//OverriddenSettingsEntry/value[\@path=\"#{listEntryValue_node['path']}\"]/CompilerOptions/SingleFlagMapOptions/SingleFlagMapEntry[key=\"UseNewCPlusPlusLib\"]/value[\@use=\"true\"]")
-            value_node['flag'] = flag
-          end
+          value_node = @operations.create_option_node(nil, "/CompilerOptions/SingleFlagMapOptions/SingleFlagMapEntry[key=\"UseNewCPlusPlusLib\"]/value[\@use=\"true\"]")
+          value_node['flag'] = flag
         end
       end
 
