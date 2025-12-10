@@ -49,7 +49,11 @@ static inline uint32_t FMEAS_GetReferenceClockCount(void)
  */
 static inline uint32_t FMEAS_GetTargetClockCount(FMEAS_SYSCON_Type *base)
 {
-    return (uint32_t)((((FREQME_Type *)base)->FREQMECTRL_R & FREQME_FREQMECTRL_R_RESULT_MASK) - 2U);
+    uint32_t capval = (uint32_t)(((FREQME_Type *)base)->FREQMECTRL_R & FREQME_FREQMECTRL_R_RESULT_MASK);
+
+    /* INT30-C: Prevent unsigned integer underflow */
+    assert(capval >= 2U);
+    return capval - 2U;
 }
 
 /*!
@@ -71,8 +75,11 @@ static inline uint32_t FMEAS_GetReferenceClockCount(void)
  */
 static inline uint32_t FMEAS_GetTargetClockCount(FMEAS_SYSCON_Type *base)
 {
-    return (uint32_t)((((SYSCON_Type *)base)->FREQMECTRL & SYSCON_FREQMECTRL_CAPVAL_MASK) >>
-                        SYSCON_FREQMECTRL_CAPVAL_SHIFT) - 2U;
+    uint32_t capval = (uint32_t)((((SYSCON_Type *)base)->FREQMECTRL & SYSCON_FREQMECTRL_CAPVAL_MASK) >>
+                                  SYSCON_FREQMECTRL_CAPVAL_SHIFT);
+    /* INT30-C: Prevent unsigned integer underflow */
+    assert(capval >= 2U);
+    return capval - 2U;
 }
 
 /*!
@@ -115,7 +122,7 @@ uint32_t FMEAS_GetFrequency(FMEAS_SYSCON_Type *base, uint32_t refClockRate)
     SYSCON->CLOCK_CTRL &= ~(SYSCON_CLOCK_CTRL_FRO1MHZ_FREQM_ENA_MASK | SYSCON_CLOCK_CTRL_XTAL32MHZ_FREQM_ENA_MASK);
 #endif
 
-    return (uint32_t)clkrate;
+    return (uint32_t)(clkrate & 0xFFFFFFFFU);
 }
 
 #if defined(FSL_FEATURE_FMEAS_GET_COUNT_SCALE) && (FSL_FEATURE_FMEAS_GET_COUNT_SCALE)

@@ -4,6 +4,8 @@
 
 - Improvements
   - Replace macros with inline functions for clock count retrieval.
+- Bug Fixes
+  - Fixed violations of the CERT INT30-C INT31-C.
 
 ## [2.1.1]
 
