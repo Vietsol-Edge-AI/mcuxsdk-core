@@ -5,6 +5,8 @@
 - New Features
   - Added bit mask inversion macros to avoid type promotion.
   - Added register operation macros.
+- Improvements
+  - Make function `MSDK_EnableCpuCycleCounter` compatible with CMSIS-5 and CMSIS-6.
 
 ## [2.6.2]
 
