@@ -1,5 +1,10 @@
 # FMEAS
 
+## [2.1.2]
+
+- Improvements
+  - Replace macros with inline functions for clock count retrieval.
+
 ## [2.1.1]
 
 - Bug Fixes
