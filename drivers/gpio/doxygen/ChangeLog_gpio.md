@@ -11,7 +11,7 @@
 
 ## [2.8.2]
 - Bug Fixes
-  - Fixed COVERITY issue that GPIO_GetInstance could return clock array overflow values ​​due to GPIO base and clock being out of sync.
+  - Fixed COVERITY issue that GPIO_GetInstance could return clock array overflow values due to GPIO base and clock being out of sync.
 
 ## [2.8.1]
 
