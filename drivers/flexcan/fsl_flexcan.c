@@ -4772,6 +4772,109 @@ static bool FLEXCAN_CheckUnhandleInterruptEvents(CAN_Type *base)
     return fgRet;
 }
 
+#if (defined(FSL_FEATURE_FLEXCAN_HAS_ENHANCED_RX_FIFO) && FSL_FEATURE_FLEXCAN_HAS_ENHANCED_RX_FIFO)
+/*!
+ * brief Sub Handler Ehanced Rx FIFO event
+ *
+ * param base FlexCAN peripheral base address.
+ * param handle FlexCAN handle pointer.
+ * param flags FlexCAN interrupt flags.
+ *
+ * return the status after handle Ehanced Rx FIFO event.
+ */
+static status_t FLEXCAN_SubHandlerForEhancedRxFifo(CAN_Type *base, flexcan_handle_t *handle, uint64_t flags)
+{
+    uint32_t watermark = ((base->ERFCR & CAN_ERFCR_ERFWM_MASK) >> CAN_ERFCR_ERFWM_SHIFT) + 1U;
+    uint32_t transferFrames;
+
+    status_t status;
+    /* Solve Ehanced Rx FIFO interrupt. */
+    if ((0u != (flags & (uint64_t)kFLEXCAN_ERxFifoUnderflowIntFlag)) &&
+        (0u != (base->ERFIER & CAN_ERFIER_ERFUFWIE_MASK)))
+    {
+        status = kStatus_FLEXCAN_RxFifoUnderflow;
+        FLEXCAN_ClearStatusFlags(base, (uint64_t)kFLEXCAN_ERxFifoUnderflowIntFlag);
+    }
+    else if ((0u != (flags & (uint64_t)kFLEXCAN_ERxFifoOverflowIntFlag)) &&
+             (0u != (base->ERFIER & CAN_ERFIER_ERFOVFIE_MASK)))
+    {
+        status = kStatus_FLEXCAN_RxFifoOverflow;
+        FLEXCAN_ClearStatusFlags(base, (uint64_t)kFLEXCAN_ERxFifoOverflowIntFlag);
+    }
+    else if ((0u != (flags & (uint64_t)kFLEXCAN_ERxFifoWatermarkIntFlag)) &&
+             (0u != (base->ERFIER & CAN_ERFIER_ERFWMIIE_MASK)))
+    {
+        /* Whether the number of CAN messages remaining to be received is greater than the watermark. */
+        transferFrames = (handle->rxFifoFrameNum > watermark) ? watermark : handle->rxFifoFrameNum;
+
+        for (uint32_t i = 0; i < transferFrames; i++)
+        {
+            status = FLEXCAN_ReadEnhancedRxFifo(base, handle->rxFifoFDFrameBuf);
+
+            if (kStatus_Success == status)
+            {
+                handle->rxFifoFDFrameBuf++;
+                handle->rxFifoFrameNum--;
+                /* Clear data Watermark flag due to has read back one frame. */
+                base->ERFSR = CAN_ERFSR_ERFWMI_MASK;
+            }
+            else
+            {
+                return kStatus_FLEXCAN_RxFifoDisabled;
+            }
+        }
+        if (handle->rxFifoFrameNum == 0U)
+        {
+            /* Stop receiving Ehanced Rx FIFO when the transmission is over. */
+            FLEXCAN_TransferAbortReceiveEnhancedFifo(base, handle);
+            status = kStatus_FLEXCAN_RxFifoIdle;
+        }
+        else if (handle->rxFifoFrameNum < watermark)
+        {
+            /* Disable watermark interrupt and enable data avaliable interrupt. */
+            FLEXCAN_DisableInterrupts(base, (uint64_t)kFLEXCAN_ERxFifoWatermarkInterruptEnable);
+            FLEXCAN_EnableInterrupts(base, (uint64_t)kFLEXCAN_ERxFifoDataAvlInterruptEnable);
+            status = kStatus_FLEXCAN_RxFifoBusy;
+        }
+        else
+        {
+            /* Continue use watermark interrupt. */
+            status = kStatus_FLEXCAN_RxFifoBusy;
+        }
+    }
+    else
+    {
+        /* Data available status, check Whether still has CAN messages remaining to be received. */
+        if (handle->rxFifoFrameNum > 0U)
+        {
+            status = FLEXCAN_ReadEnhancedRxFifo(base, handle->rxFifoFDFrameBuf);
+
+            if (kStatus_Success == status)
+            {
+                handle->rxFifoFDFrameBuf++;
+                handle->rxFifoFrameNum--;
+            }
+            else
+            {
+                return kStatus_FLEXCAN_RxFifoDisabled;
+            }
+        }
+        if (handle->rxFifoFrameNum == 0U)
+        {
+            /* Stop receiving Ehanced Rx FIFO when the transmission is over. */
+            FLEXCAN_TransferAbortReceiveEnhancedFifo(base, handle);
+            status = kStatus_FLEXCAN_RxFifoIdle;
+        }
+        else
+        {
+            /* Continue use data avaliable interrupt. */
+            status = kStatus_FLEXCAN_RxFifoBusy;
+        }
+    }
+    return status;
+}
+#endif
+
 /*!
  * brief Sub Handler Legacy Rx FIFO Trasfered Events
  *
@@ -5058,109 +5161,6 @@ static status_t FLEXCAN_SubHandlerForDataTransfered(CAN_Type *base,
 
     return status;
 }
-
-#if (defined(FSL_FEATURE_FLEXCAN_HAS_ENHANCED_RX_FIFO) && FSL_FEATURE_FLEXCAN_HAS_ENHANCED_RX_FIFO)
-/*!
- * brief Sub Handler Ehanced Rx FIFO event
- *
- * param base FlexCAN peripheral base address.
- * param handle FlexCAN handle pointer.
- * param flags FlexCAN interrupt flags.
- *
- * return the status after handle Ehanced Rx FIFO event.
- */
-static status_t FLEXCAN_SubHandlerForEhancedRxFifo(CAN_Type *base, flexcan_handle_t *handle, uint64_t flags)
-{
-    uint32_t watermark = ((base->ERFCR & CAN_ERFCR_ERFWM_MASK) >> CAN_ERFCR_ERFWM_SHIFT) + 1U;
-    uint32_t transferFrames;
-
-    status_t status;
-    /* Solve Ehanced Rx FIFO interrupt. */
-    if ((0u != (flags & (uint64_t)kFLEXCAN_ERxFifoUnderflowIntFlag)) &&
-        (0u != (base->ERFIER & CAN_ERFIER_ERFUFWIE_MASK)))
-    {
-        status = kStatus_FLEXCAN_RxFifoUnderflow;
-        FLEXCAN_ClearStatusFlags(base, (uint64_t)kFLEXCAN_ERxFifoUnderflowIntFlag);
-    }
-    else if ((0u != (flags & (uint64_t)kFLEXCAN_ERxFifoOverflowIntFlag)) &&
-             (0u != (base->ERFIER & CAN_ERFIER_ERFOVFIE_MASK)))
-    {
-        status = kStatus_FLEXCAN_RxFifoOverflow;
-        FLEXCAN_ClearStatusFlags(base, (uint64_t)kFLEXCAN_ERxFifoOverflowIntFlag);
-    }
-    else if ((0u != (flags & (uint64_t)kFLEXCAN_ERxFifoWatermarkIntFlag)) &&
-             (0u != (base->ERFIER & CAN_ERFIER_ERFWMIIE_MASK)))
-    {
-        /* Whether the number of CAN messages remaining to be received is greater than the watermark. */
-        transferFrames = (handle->rxFifoFrameNum > watermark) ? watermark : handle->rxFifoFrameNum;
-
-        for (uint32_t i = 0; i < transferFrames; i++)
-        {
-            status = FLEXCAN_ReadEnhancedRxFifo(base, handle->rxFifoFDFrameBuf);
-
-            if (kStatus_Success == status)
-            {
-                handle->rxFifoFDFrameBuf++;
-                handle->rxFifoFrameNum--;
-                /* Clear data Watermark flag due to has read back one frame. */
-                base->ERFSR = CAN_ERFSR_ERFWMI_MASK;
-            }
-            else
-            {
-                return kStatus_FLEXCAN_RxFifoDisabled;
-            }
-        }
-        if (handle->rxFifoFrameNum == 0U)
-        {
-            /* Stop receiving Ehanced Rx FIFO when the transmission is over. */
-            FLEXCAN_TransferAbortReceiveEnhancedFifo(base, handle);
-            status = kStatus_FLEXCAN_RxFifoIdle;
-        }
-        else if (handle->rxFifoFrameNum < watermark)
-        {
-            /* Disable watermark interrupt and enable data avaliable interrupt. */
-            FLEXCAN_DisableInterrupts(base, (uint64_t)kFLEXCAN_ERxFifoWatermarkInterruptEnable);
-            FLEXCAN_EnableInterrupts(base, (uint64_t)kFLEXCAN_ERxFifoDataAvlInterruptEnable);
-            status = kStatus_FLEXCAN_RxFifoBusy;
-        }
-        else
-        {
-            /* Continue use watermark interrupt. */
-            status = kStatus_FLEXCAN_RxFifoBusy;
-        }
-    }
-    else
-    {
-        /* Data available status, check Whether still has CAN messages remaining to be received. */
-        if (handle->rxFifoFrameNum > 0U)
-        {
-            status = FLEXCAN_ReadEnhancedRxFifo(base, handle->rxFifoFDFrameBuf);
-
-            if (kStatus_Success == status)
-            {
-                handle->rxFifoFDFrameBuf++;
-                handle->rxFifoFrameNum--;
-            }
-            else
-            {
-                return kStatus_FLEXCAN_RxFifoDisabled;
-            }
-        }
-        if (handle->rxFifoFrameNum == 0U)
-        {
-            /* Stop receiving Ehanced Rx FIFO when the transmission is over. */
-            FLEXCAN_TransferAbortReceiveEnhancedFifo(base, handle);
-            status = kStatus_FLEXCAN_RxFifoIdle;
-        }
-        else
-        {
-            /* Continue use data avaliable interrupt. */
-            status = kStatus_FLEXCAN_RxFifoBusy;
-        }
-    }
-    return status;
-}
-#endif
 
 /*!
  * brief FlexCAN IRQ handle function.
