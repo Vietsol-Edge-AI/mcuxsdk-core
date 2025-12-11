@@ -23,7 +23,7 @@
 /*! @name Driver version */
 /*! @{ */
 /*! @brief GPIO driver version. */
-#define FSL_GPIO_DRIVER_VERSION (MAKE_VERSION(2, 8, 3))
+#define FSL_GPIO_DRIVER_VERSION (MAKE_VERSION(2, 8, 4))
 /*! @} */
 
 #if defined(FSL_FEATURE_GPIO_REGISTERS_WIDTH) && (FSL_FEATURE_GPIO_REGISTERS_WIDTH == 8U)
@@ -458,6 +458,10 @@ uint32_t GPIO_PortGetInterruptFlags(GPIO_Type *base);
  */
 void GPIO_PortClearInterruptFlags(GPIO_Type *base, uint32_t mask);
 #else
+
+#define GPIO_PortGetInterruptFlags(base) GPIO_GpioGetInterruptFlags((base))
+#define GPIO_PortClearInterruptFlags(base, mask) GPIO_GpioClearInterruptFlags((base), (mask))
+
 /*!
  * @brief Configures the gpio pin interrupt/DMA request.
  *

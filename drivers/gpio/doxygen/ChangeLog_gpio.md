@@ -1,5 +1,10 @@
 # GPIO
 
+## [2.8.4]
+- Improvements
+  - Make function `GPIO_PortGetInterruptFlags` and `GPIO_PortClearInterruptFlags`
+    available for all variants, they are used for all pins flags in one GPIO port.
+
 ## [2.8.3]
 - Bug Fixes
   - Fixed violations of the MISRA C-2012 Rule 10.1, 5.7.
