@@ -1044,6 +1044,7 @@ void SAI_TxSetFifoConfig(I2S_Type *base, sai_fifo_t *config)
 {
     assert(config != NULL);
 #if defined(FSL_FEATURE_SAI_HAS_FIFO) && (FSL_FEATURE_SAI_HAS_FIFO)
+    assert(FSL_FEATURE_SAI_FIFO_COUNTn(base) != -1);
     if (config->fifoWatermark > (uint8_t)((uint32_t)FSL_FEATURE_SAI_FIFO_COUNTn(base)) ||
 	(!MCUX_SDK_SAI_ALLOW_NULL_FIFO_WATERMARK && config->fifoWatermark == 0U))
     {
@@ -1090,6 +1091,7 @@ void SAI_RxSetFifoConfig(I2S_Type *base, sai_fifo_t *config)
 {
     assert(config != NULL);
 #if defined(FSL_FEATURE_SAI_HAS_FIFO) && (FSL_FEATURE_SAI_HAS_FIFO)
+    assert(FSL_FEATURE_SAI_FIFO_COUNTn(base) != -1);
     if (config->fifoWatermark > (uint8_t)((uint32_t)FSL_FEATURE_SAI_FIFO_COUNTn(base)) ||
 	(!MCUX_SDK_SAI_ALLOW_NULL_FIFO_WATERMARK && config->fifoWatermark == 0U))
     {
@@ -1389,6 +1391,7 @@ void SAI_TransferTxSetConfig(I2S_Type *base, sai_handle_t *handle, sai_transceiv
 
     handle->bitWidth = config->serialData.dataWordNLength;
 #if defined(FSL_FEATURE_SAI_HAS_FIFO) && (FSL_FEATURE_SAI_HAS_FIFO)
+    assert(FSL_FEATURE_SAI_FIFO_COUNTn(base) != -1);
     if ((config->fifo.fifoWatermark == 0U) ||
         (config->fifo.fifoWatermark > (uint8_t)((uint32_t)FSL_FEATURE_SAI_FIFO_COUNTn(base))))
     {
@@ -1505,6 +1508,7 @@ void SAI_TransferRxSetConfig(I2S_Type *base, sai_handle_t *handle, sai_transceiv
 
     handle->bitWidth = config->serialData.dataWordNLength;
 #if defined(FSL_FEATURE_SAI_HAS_FIFO) && (FSL_FEATURE_SAI_HAS_FIFO)
+    assert(FSL_FEATURE_SAI_FIFO_COUNTn(base) != -1);
     if ((config->fifo.fifoWatermark == 0U) ||
         (config->fifo.fifoWatermark > (uint8_t)((uint32_t)FSL_FEATURE_SAI_FIFO_COUNTn(base))))
     {
@@ -1684,6 +1688,7 @@ void SAI_WriteBlocking(I2S_Type *base, uint32_t channel, uint32_t bitWidth, uint
     uint32_t i            = 0;
     uint32_t bytesPerWord = bitWidth / 8U;
 #if defined(FSL_FEATURE_SAI_HAS_FIFO) && (FSL_FEATURE_SAI_HAS_FIFO)
+    assert(FSL_FEATURE_SAI_FIFO_COUNTn(base) != -1);
     uint32_t fifoCount = (uint32_t)FSL_FEATURE_SAI_FIFO_COUNTn(base);
     if (fifoCount >= base->TCR1)
     {
@@ -1745,6 +1750,7 @@ void SAI_WriteMultiChannelBlocking(
     uint32_t channelNums = 0U, endChannel = 0U;
 
 #if defined(FSL_FEATURE_SAI_HAS_FIFO) && (FSL_FEATURE_SAI_HAS_FIFO)
+    assert(FSL_FEATURE_SAI_FIFO_COUNTn(base) != -1);
     uint32_t fifoCount = (uint32_t)FSL_FEATURE_SAI_FIFO_COUNTn(base);
     if (fifoCount >= base->TCR1)
     {
@@ -2283,6 +2289,7 @@ void SAI_TransferTxHandleIRQ(I2S_Type *base, sai_handle_t *handle)
 #if defined(FSL_FEATURE_SAI_HAS_FIFO) && (FSL_FEATURE_SAI_HAS_FIFO)
     if (IS_SAI_FLAG_SET(base->TCSR, I2S_TCSR_FRF_MASK))
     {
+        assert(FSL_FEATURE_SAI_FIFO_COUNTn(base) != -1);
         /* Judge if the data need to transmit is less than space */
         size_t size;
         /* Check for potential overflow before multiplication */
@@ -2388,6 +2395,7 @@ void SAI_TransferRxHandleIRQ(I2S_Type *base, sai_handle_t *handle)
 #if defined(FSL_FEATURE_SAI_HAS_FIFO) && (FSL_FEATURE_SAI_HAS_FIFO)
     if (IS_SAI_FLAG_SET(base->RCSR, I2S_RCSR_FRF_MASK))
     {
+        assert(FSL_FEATURE_SAI_FIFO_COUNTn(base) != -1);
         /* Judge if the data need to transmit is less than space */
         size_t size;
         /* Check for potential overflow */

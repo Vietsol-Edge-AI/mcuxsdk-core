@@ -1,5 +1,10 @@
 # SAI
 
+## [2.4.11]
+
+- Bug Fixes
+  - Fixed MSG findings for platforms with multiple FIFO size support.
+
 ## [2.4.10]
 
 - Improvements

@@ -1,5 +1,10 @@
 # SAI_SDMA
 
+## [2.6.1]
+
+- Bug Fixes
+  - Fixed MSG findings of INT31-C
+
 ## [2.6.0]
 
 - Improvements

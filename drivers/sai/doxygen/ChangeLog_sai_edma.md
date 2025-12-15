@@ -1,5 +1,10 @@
 # SAI_EDMA
 
+## [2.7.4]
+
+- Bug Fixes
+  - Fixed MSG finding for platforms with multiple FIFO size support.
+
 ## [2.7.3]
 
 - Bug Fixes
