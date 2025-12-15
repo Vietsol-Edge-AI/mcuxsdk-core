@@ -1,5 +1,10 @@
 # CRC
 
+## [2.1.0]
+
+- Bug fix:
+  - Choosing CRC clocks from CRC clock array according to instance instead of hardcoded value.
+
 ## [2.0.5]
 
 - Bug fix:

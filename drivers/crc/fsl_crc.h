@@ -22,12 +22,15 @@
 
 /*! @name Driver version */
 /*! @{ */
-/*! @brief CRC driver version. Version 2.0.5.
+/*! @brief CRC driver version. Version 2.1.0.
  *
- * Current version: 2.0.5
+ * Current version: 2.1.0
  *
  * Change log:
-
+ 
+ * - Version 2.1.0
+ *   - Choosing CRC clocks from CRC clock array according to instance instead of hardcoded value.
+ *
  * - Version 2.0.5
  *   - Fix CERT-C issue with boolean-to-unsigned integer conversion.
  *
@@ -43,7 +46,7 @@
  * - Version 2.0.1
  *   - move DATA and DATALL macro definition from header file to source file
  */
-#define FSL_CRC_DRIVER_VERSION (MAKE_VERSION(2, 0, 5))
+#define FSL_CRC_DRIVER_VERSION (MAKE_VERSION(2, 1, 0))
 /*! @} */
 
 #ifndef CRC_DRIVER_CUSTOM_DEFAULTS
@@ -113,13 +116,7 @@ void CRC_Init(CRC_Type *base, const crc_config_t *config);
  *
  * @param base CRC peripheral address.
  */
-static inline void CRC_Deinit(CRC_Type *base)
-{
-#if !(defined(FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL) && FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL)
-    /* gate clock */
-    CLOCK_DisableClock(kCLOCK_Crc0);
-#endif /* FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL */
-}
+void CRC_Deinit(CRC_Type *base);
 
 /*!
  * @brief Loads default values to the CRC protocol configuration structure.
