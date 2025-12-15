@@ -4,6 +4,8 @@
 
 - New Features
   - Added EENV support to setup XSPI based on diffferent target groups.
+- Bug Fixes
+  - Fixed issue of XSPI_UpdateSFPConfig() function. Disabled all global MDAD and FRAD setting before updating.
 
 ## [2.7.0]
 

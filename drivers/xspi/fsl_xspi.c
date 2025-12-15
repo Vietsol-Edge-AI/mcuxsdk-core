@@ -1217,6 +1217,7 @@ RAMFUNC void XSPI_UpdateSFPConfig(XSPI_Type *base,
     enableFrad = (ptrSfpFradConfig != NULL) ? true : false;
     enableSFP  = (bool)(enableMdad | enableFrad);
 
+    base->MGC &= ~(XSPI_MGC_GVLDFRAD_MASK | XSPI_MGC_GVLDMDAD_MASK | XSPI_MGC_GVLD_MASK);
     if (enableSFP)
     {
         if (enableMdad)
@@ -1305,10 +1306,6 @@ RAMFUNC void XSPI_UpdateSFPConfig(XSPI_Type *base,
                 }
             }
         }
-    }
-    else
-    {
-        base->MGC &= ~(XSPI_MGC_GVLDFRAD_MASK | XSPI_MGC_GVLDMDAD_MASK | XSPI_MGC_GVLD_MASK);
     }
 }
 
