@@ -105,7 +105,7 @@ status_t MIPI_CSI2RX_InitInterface(PRIMARY_CSI2_CONTROLLER_Type *base, CAMERA_PH
 status_t MIPI_CSI2RX_Init(PRIMARY_CSI2_CONTROLLER_Type *pribase, SECONDARY_CSI2_CONTROLLER_Type *secbase, CAMERA_PHY_CSR_Type *phybase, const csi2rx_config_t *config)
 {
     status_t result = kStatus_Success;
-    PRIMARY_CSI2_CONTROLLER_Type *base;
+    PRIMARY_CSI2_CONTROLLER_Type *base = NULL;
 
     assert(NULL != config);
 
@@ -135,6 +135,10 @@ status_t MIPI_CSI2RX_Init(PRIMARY_CSI2_CONTROLLER_Type *pribase, SECONDARY_CSI2_
     {
         assert (config->laneNum <= 4);
         base = (PRIMARY_CSI2_CONTROLLER_Type *)pribase;
+    }
+    else
+    {
+        return kStatus_InvalidArgument;
     }
 
     /* Start up MIPI CSI-2 host control */
