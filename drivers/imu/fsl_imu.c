@@ -42,7 +42,7 @@
 status_t IMU_Init(imu_link_t link)
 {
     status_t status;
-#if IMU_BUSY_POLL_COUNT
+#if defined(IMU_BUSY_POLL_COUNT) && (IMU_BUSY_POLL_COUNT > 0)
     uint32_t poll_count = IMU_BUSY_POLL_COUNT;
 #endif
 
@@ -61,7 +61,7 @@ status_t IMU_Init(imu_link_t link)
         /* Flush RX FIFO. */
         while (!IMU_RX_FIFO_EMPTY(link))
         {
-#if IMU_BUSY_POLL_COUNT
+#if defined(IMU_BUSY_POLL_COUNT) && (IMU_BUSY_POLL_COUNT > 0)
             if ((--poll_count) == 0u) /* GCOVR_EXCL_BR_LINE */
             {
                 /*
@@ -118,7 +118,7 @@ int32_t IMU_SendMsgsBlocking(imu_link_t link, const uint32_t *msgs, int32_t msgC
     int32_t ret;
     int32_t curSent;
     int32_t fifoEmptySpace;
-#if IMU_BUSY_POLL_COUNT
+#if defined(IMU_BUSY_POLL_COUNT) && (IMU_BUSY_POLL_COUNT > 0)
     uint32_t poll_count = IMU_BUSY_POLL_COUNT;
 #endif
 
@@ -162,7 +162,7 @@ int32_t IMU_SendMsgsBlocking(imu_link_t link, const uint32_t *msgs, int32_t msgC
         /* Send the last. */
         while (0UL == IMU_GetSendFifoEmptySpace(link))
         {
-#if IMU_BUSY_POLL_COUNT
+#if defined(IMU_BUSY_POLL_COUNT) && (IMU_BUSY_POLL_COUNT > 0)
             if ((--poll_count) == 0u)
             {
                 return IMU_ERR_TIMEOUT;
@@ -424,7 +424,7 @@ int32_t IMU_ReceiveMsgsBlocking(imu_link_t link, uint32_t *msgs, int32_t desired
 int32_t IMU_SendMsgPtrBlocking(imu_link_t link, uint32_t msgPtr, bool lockSendFifo)
 {
     int32_t ret = 0;
-#if IMU_BUSY_POLL_COUNT
+#if defined(IMU_BUSY_POLL_COUNT) && (IMU_BUSY_POLL_COUNT > 0)
     uint32_t poll_count = IMU_BUSY_POLL_COUNT;
 #endif
 
@@ -436,7 +436,7 @@ int32_t IMU_SendMsgPtrBlocking(imu_link_t link, uint32_t msgPtr, bool lockSendFi
     {
         while (IMU_TX_FIFO_ALMOST_FULL(link))
         {
-#if IMU_BUSY_POLL_COUNT
+#if defined(IMU_BUSY_POLL_COUNT) && (IMU_BUSY_POLL_COUNT > 0)
             if ((--poll_count) == 0u)
             {
                 return IMU_ERR_TIMEOUT;
