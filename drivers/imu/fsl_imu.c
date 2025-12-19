@@ -66,12 +66,12 @@ status_t IMU_Init(imu_link_t link)
             {
                 /*
                  * $Branch Coverage Justification$
-                 * ((--poll_count) == 0u) not covered as it is almost 
-                 * impossible to reach the timeout here (newly received messages can be 
+                 * ((--poll_count) == 0u) not covered as it is almost
+                 * impossible to reach the timeout here (newly received messages can be
                  * processed by IMU_RD_MSG fast enough, sooner than the fifo is full).
                  */
                 status = kStatus_Timeout; /* GCOVR_EXCL_LINE */
-                break; /* GCOVR_EXCL_LINE */
+                break;                    /* GCOVR_EXCL_LINE */
             }
 #endif
             (void)IMU_RD_MSG(link);
@@ -118,9 +118,6 @@ int32_t IMU_SendMsgsBlocking(imu_link_t link, const uint32_t *msgs, int32_t msgC
     int32_t ret;
     int32_t curSent;
     int32_t fifoEmptySpace;
-#if defined(IMU_BUSY_POLL_COUNT) && (IMU_BUSY_POLL_COUNT > 0)
-    uint32_t poll_count = IMU_BUSY_POLL_COUNT;
-#endif
 
     if (msgCount <= 0)
     {
@@ -160,17 +157,26 @@ int32_t IMU_SendMsgsBlocking(imu_link_t link, const uint32_t *msgs, int32_t msgC
         }
 
         /* Send the last. */
+#if defined(IMU_BUSY_POLL_COUNT) && (IMU_BUSY_POLL_COUNT > 0)
+        uint32_t poll_count = IMU_BUSY_POLL_COUNT;
         while (0UL == IMU_GetSendFifoEmptySpace(link))
         {
-#if defined(IMU_BUSY_POLL_COUNT) && (IMU_BUSY_POLL_COUNT > 0)
             if ((--poll_count) == 0u)
             {
-                return IMU_ERR_TIMEOUT;
+                ret = IMU_ERR_TIMEOUT;
+                break;
             }
-#endif
         }
-
+        if (0L <= ret)
+        {
+            IMU_WR_MSG(link, *msgs);
+        }
+#else
+        while (0UL == IMU_GetSendFifoEmptySpace(link))
+        {
+        }
         IMU_WR_MSG(link, *msgs);
+#endif
     }
 
     return ret;
@@ -424,9 +430,6 @@ int32_t IMU_ReceiveMsgsBlocking(imu_link_t link, uint32_t *msgs, int32_t desired
 int32_t IMU_SendMsgPtrBlocking(imu_link_t link, uint32_t msgPtr, bool lockSendFifo)
 {
     int32_t ret = 0;
-#if defined(IMU_BUSY_POLL_COUNT) && (IMU_BUSY_POLL_COUNT > 0)
-    uint32_t poll_count = IMU_BUSY_POLL_COUNT;
-#endif
 
     if (IMU_TX_FIFO_LOCKED(link))
     {
@@ -434,14 +437,29 @@ int32_t IMU_SendMsgPtrBlocking(imu_link_t link, uint32_t msgPtr, bool lockSendFi
     }
     else
     {
+#if defined(IMU_BUSY_POLL_COUNT) && (IMU_BUSY_POLL_COUNT > 0)
+        uint32_t poll_count = IMU_BUSY_POLL_COUNT;
         while (IMU_TX_FIFO_ALMOST_FULL(link))
         {
-#if defined(IMU_BUSY_POLL_COUNT) && (IMU_BUSY_POLL_COUNT > 0)
             if ((--poll_count) == 0u)
             {
-                return IMU_ERR_TIMEOUT;
+                ret = IMU_ERR_TIMEOUT;
+                break;
             }
-#endif
+        }
+
+        if (0L == ret)
+        {
+            if (lockSendFifo)
+            {
+                IMU_LOCK_TX_FIFO(link);
+            }
+
+            IMU_WR_MSG(link, msgPtr);
+        }
+#else
+        while (IMU_TX_FIFO_ALMOST_FULL(link))
+        {
         }
 
         if (lockSendFifo)
@@ -450,6 +468,8 @@ int32_t IMU_SendMsgPtrBlocking(imu_link_t link, uint32_t msgPtr, bool lockSendFi
         }
 
         IMU_WR_MSG(link, msgPtr);
+#endif
+
     }
 
     return ret;
