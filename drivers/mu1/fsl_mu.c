@@ -112,19 +112,19 @@ status_t MU_SendMsg(MU_Type *base, uint32_t regIndex, uint32_t msg)
 {
     assert(regIndex < MU_TR_COUNT);
 
-#if MU1_BUSY_POLL_COUNT
+#if defined(MU1_BUSY_POLL_COUNT) && (MU1_BUSY_POLL_COUNT > 0)
     uint32_t poll_count = MU1_BUSY_POLL_COUNT;
-#endif /* MU1_BUSY_POLL_COUNT */
+#endif /* defined(MU1_BUSY_POLL_COUNT) && (MU1_BUSY_POLL_COUNT > 0) */
 
     /* Wait TX register to be empty. */
     while (0U == (base->TSR & (1UL << regIndex)))
     {
-#if MU1_BUSY_POLL_COUNT
+#if defined(MU1_BUSY_POLL_COUNT) && (MU1_BUSY_POLL_COUNT > 0)
         if ((--poll_count) == 0u)
         {
             return kStatus_Timeout;
         }
-#endif /* MU1_BUSY_POLL_COUNT */
+#endif /* defined(MU1_BUSY_POLL_COUNT) && (MU1_BUSY_POLL_COUNT > 0) */
     }
 
     base->TR[regIndex] = msg;
@@ -165,19 +165,19 @@ status_t MU_ReceiveMsgTimeout(MU_Type *base, uint32_t regIndex, uint32_t *readVa
         return kStatus_InvalidArgument;
     }
 
-#if MU1_BUSY_POLL_COUNT
+#if defined(MU1_BUSY_POLL_COUNT) && (MU1_BUSY_POLL_COUNT > 0)
     uint32_t poll_count = MU1_BUSY_POLL_COUNT;
-#endif /* MU1_BUSY_POLL_COUNT */
+#endif /* defined(MU1_BUSY_POLL_COUNT) && (MU1_BUSY_POLL_COUNT > 0) */
 
     /* Wait RX register to be full. */
     while (0U == (base->RSR & (1UL << regIndex)))
     {
-#if MU1_BUSY_POLL_COUNT
+#if defined(MU1_BUSY_POLL_COUNT) && (MU1_BUSY_POLL_COUNT > 0)
         if ((--poll_count) == 0u)
         {
             return kStatus_Timeout;
         }
-#endif /* MU1_BUSY_POLL_COUNT */
+#endif /* defined(MU1_BUSY_POLL_COUNT) && (MU1_BUSY_POLL_COUNT > 0) */
     }
 
     *readValue = base->RR[regIndex];
@@ -238,19 +238,19 @@ uint32_t MU_ReceiveMsg(MU_Type *base, uint32_t regIndex)
  */
 status_t MU_SetFlags(MU_Type *base, uint32_t flags)
 {
-#if MU1_BUSY_POLL_COUNT
+#if defined(MU1_BUSY_POLL_COUNT) && (MU1_BUSY_POLL_COUNT > 0)
     uint32_t poll_count = MU1_BUSY_POLL_COUNT;
-#endif /* MU1_BUSY_POLL_COUNT */
+#endif /* defined(MU1_BUSY_POLL_COUNT) && (MU1_BUSY_POLL_COUNT > 0) */
 
     /* Wait for update finished. */
     while (0U != (base->SR & ((uint32_t)MU_SR_FUP_MASK)))
     {
-#if MU1_BUSY_POLL_COUNT
+#if defined(MU1_BUSY_POLL_COUNT) && (MU1_BUSY_POLL_COUNT > 0)
         if ((--poll_count) == 0u)
         {
             return kStatus_Timeout;
         }
-#endif /* MU1_BUSY_POLL_COUNT */
+#endif /* defined(MU1_BUSY_POLL_COUNT) && (MU1_BUSY_POLL_COUNT > 0) */
     }
 
     MU_SetFlagsNonBlocking(base, flags);
@@ -605,19 +605,19 @@ status_t MU_HardwareResetOtherCore(MU_Type *base, bool waitReset, bool holdReset
     {
 #if !(defined(FSL_FEATURE_MU_NO_CORE_STATUS) && (0 != FSL_FEATURE_MU_NO_CORE_STATUS))
 #if !(defined(FSL_FEATURE_MU_HAS_RESET_ASSERT_INT) && (FSL_FEATURE_MU_HAS_RESET_ASSERT_INT == 0))
-#if MU1_BUSY_POLL_COUNT
+#if defined(MU1_BUSY_POLL_COUNT) && (MU1_BUSY_POLL_COUNT > 0)
         uint32_t poll_count = MU1_BUSY_POLL_COUNT;
-#endif /* MU1_BUSY_POLL_COUNT */
+#endif /* defined(MU1_BUSY_POLL_COUNT) && (MU1_BUSY_POLL_COUNT > 0) */
 
         /* Wait for the other core go to reset. */
         while (0U == (base->CSSR0 & MU_CSSR0_RAIP_MASK))
         {
-#if MU1_BUSY_POLL_COUNT
+#if defined(MU1_BUSY_POLL_COUNT) && (MU1_BUSY_POLL_COUNT > 0)
             if ((--poll_count) == 0u)
             {
                 return kStatus_Timeout;
             }
-#endif /* MU1_BUSY_POLL_COUNT */
+#endif /* defined(MU1_BUSY_POLL_COUNT) && (MU1_BUSY_POLL_COUNT > 0) */
         }
 #endif /* FSL_FEATURE_MU_HAS_RESET_ASSERT_INT */
 #endif /* FSL_FEATURE_MU_NO_CORE_STATUS */

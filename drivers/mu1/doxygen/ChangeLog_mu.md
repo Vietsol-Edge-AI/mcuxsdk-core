@@ -1,5 +1,10 @@
 # MU
 
+## [2.8.2]
+
+- Improvements
+  - Fix MISRA C-2012 Rule 20.8 violations.
+
 ## [2.8.1]
 
 - Bug Fixes
