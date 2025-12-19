@@ -97,6 +97,10 @@ class CmakeTraceApp(CmakeApp):
             "skip_line": 0,
             "skip_file": None,
         }
+        if self.options.board_copy_folders:
+            self.board_copy_folders = self.options.board_copy_folders
+        else:
+            self.board_copy_folders = copy.deepcopy(self.shared_options.board_copy_folders)
         if self.options.app_type == AppType.linked_app:
             self.app_id = self.options.name
         if self.shared_options.core_id:
@@ -192,6 +196,12 @@ class CmakeTraceApp(CmakeApp):
         """
         result = super().process_example_yml(target_apps)
         example_name, example_data = next(iter(result[0].items()))
+        if self.board_copy_folders and (freestanding_copied_folders := example_data.get('contents', {}).get('freestanding_copied_folders', [])):
+            # TODO, in future, if user want to use export_app for custom board, default board_copy_folders shall be disabled
+            if example_data.get('contents').get('custom_board_root'):
+                self.board_copy_folders = freestanding_copied_folders
+            else:
+                self.board_copy_folders.extend(freestanding_copied_folders)
         # Ensure list_project only catch exported boards
         if filtered := {
             k: v
@@ -284,8 +294,8 @@ class CmakeTraceApp(CmakeApp):
         # Preprocess line by line to avoid large memory usage
         filtered_result = []
         filtered_paths = [self.source_list_file.as_posix()]
-        if self.shared_options.board_copy_folders:
-            filtered_paths.extend(self.shared_options.board_copy_folders)
+        if self.board_copy_folders:
+            filtered_paths.extend(self.board_copy_folders)
         with open(trace_json_path) as f:
             for line in f:
                 j_line = json.loads(line)
@@ -392,11 +402,11 @@ class CmakeTraceApp(CmakeApp):
         if any([path.startswith(p) for p in BYPASS_DIRS]):
             return False
         # Hardcode for non --bf mode, skip reconfig.cmake and files out of example root
-        if not self.shared_options.board_copy_folders and (
+        if not self.board_copy_folders and (
             path.endswith("reconfig.cmake") or not path.startswith(self.example_root)
         ):
             return False
-        if self.shared_options.board_copy_folders and not match_target(path, self.shared_options.board_copy_folders):
+        if self.board_copy_folders and not match_target(path, self.board_copy_folders):
             return False
         return True
 
@@ -408,8 +418,8 @@ class CmakeTraceApp(CmakeApp):
 
         def check_trace_file(p_file):
             if (p_file not in self.app_files) and (p_file not in self.trace_files):
-                if self.shared_options.board_copy_folders and match_target(
-                    p_file, self.shared_options.board_copy_folders
+                if self.board_copy_folders and match_target(
+                    p_file, self.board_copy_folders
                 ):
                     logger.debug(f"Add board cmake file {p_file}")
                     self.trace_files.append(p_file)
@@ -489,7 +499,7 @@ class CmakeTraceApp(CmakeApp):
                 if path.name == "reconfig.cmake":
                     logger.debug(f"Add app reconfig cmake file {path.as_posix()}")
                     # Put reconfig.cmake in board_files.cmake may cause examples/wireless_examples/zigbee/coordinator_ble_wuart/bm fail
-                    # self.app_files.append(path.as_posix())
+                    # self.trace_files.append(path.as_posix())
                 else:
                     logger.debug(f"Add app include cmake file {path.as_posix()}")
                 self.app_files.append(path.as_posix())
@@ -579,7 +589,7 @@ class CmakeTraceApp(CmakeApp):
 
     def dump_result(self):
         self.update_kconfig_path()
-        if self.shared_options.board_copy_folders:
+        if self.board_copy_folders:
             if mex_file := next((f for f in os.listdir(self.output_board_dir) if f.endswith(".mex")), None):
                 add_mex_statement = f"mcux_add_config_mex_path( PATH {self.cmake_trace_dir} )"
                 self.app_receiver["result"].append(add_mex_statement)
@@ -593,11 +603,15 @@ class CmakeTraceApp(CmakeApp):
                 self.trace_receiver["ps_list"],
             )
             if force_selected:
-                self.update_app_kconfig(force_selected)
+                self.update_trace_kconfig(force_selected)
             open(self.trace_receiver["output_dir"] / "prj.conf", "a", encoding="utf-8").write(
                 "\n".join(board_prj_conf)
             )
             self.update_cmake_file()
+        if not any(self.output_board_dir.iterdir()):
+            self.output_board_dir.rmdir()
+        if self.options.app_type == AppType.main_app:
+            self.update_entry_kconfig()
         self.write_cmake_file(self.output_dir / "CMakeLists.txt", self.app_receiver["result"])
 
     def write_cmake_file(self, path, result):
@@ -680,27 +694,22 @@ class CmakeTraceApp(CmakeApp):
 
     def check_multiple_declare_source(self, path, loc):
         """
-        Checks whether the given source file path and its location meet specific criteria.
+        Checks whether the given source file path was declared multiple times.
+        If the source file was declared outside of a project segment, it is danger to process it.
         Args:
             path (str): The source file path to check.
             loc (str): The location associated with the source file.
         Returns:
-            bool: True if the source file and its locations satisfy the required conditions,
+            bool: True if the source file is safe to process,
                   False otherwise.
-        The method verifies:
-            - If the only location for the path is `loc`, returns True.
-            - If `shared_options.board_copy_folders` is set, ensures each location for the path
-              contains any of the specified board copy folders.
-            - If `shared_options.board_copy_folders` is not set, ensures each location starts
-              with `example_root`.
         """
 
         locs = self.all_sources.get(path, [])
         if locs == [loc]:
             return True
         for f in locs:
-            if self.shared_options.board_copy_folders:
-                if not match_target(f, self.shared_options.board_copy_folders):
+            if self.board_copy_folders:
+                if not match_target(f, self.board_copy_folders):
                     return False
             else:
                 # NOTE hardcode
@@ -882,8 +891,10 @@ class CmakeTraceApp(CmakeApp):
             app_type=AppType.linked_app,
             source_dir=source_dir,
             output_dir=self.shared_options.output_dir / source_dir.name,
-            cmake_variables=self.shared_options.cmake_variables,
+            cmake_variables=copy.deepcopy(self.shared_options.cmake_variables),
             trace_data=result[app_name],
+            # By default, sysbuild example shall inherit board copy folders from entry project
+            board_copy_folders = copy.deepcopy(self.board_copy_folders),
         )
         for k, v in parsed_func.single_args.items():
             # Update cmake variables except SOURCE_DIR and APPLICATION
@@ -944,7 +955,7 @@ class CmakeTraceApp(CmakeApp):
                     board_prj_conf.append(f"{v}=y")
         return board_prj_conf, force_selected
 
-    def update_app_kconfig(self, force_selected):
+    def update_trace_kconfig(self, force_selected):
         """
         Update the freestanding app Kconfig to force select promptless symbols
         1. If Kconfig exists, append to the end of the file
@@ -962,6 +973,15 @@ class CmakeTraceApp(CmakeApp):
             "    default y",
         ]
         result.extend([f"    select {item}" for item in force_selected])
+        if (dest_kconfig := self.output_board_dir / "Kconfig.trace").exists():
+            open(dest_kconfig, "a", encoding="utf-8").write("\n" + "\n".join(result) + "\n")
+        else:
+            open(dest_kconfig, "w", encoding="utf-8").write("\n".join(result) + "\n")
+
+    def update_entry_kconfig(self):
+        result = [
+            f"orsource \"{self.cmake_trace_dir}/Kconfig.trace\""
+        ]
         if (dest_kconfig := self.output_dir / "Kconfig").exists():
             open(dest_kconfig, "a", encoding="utf-8").write("\n" + "\n".join(result) + "\n")
         else:

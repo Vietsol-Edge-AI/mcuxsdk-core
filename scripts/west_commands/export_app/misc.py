@@ -123,6 +123,7 @@ class AppOptions:
     cmake_variables: Dict[str, str] = None
     name: Optional[str] = None
     trace_data: dict = None
+    board_copy_folders: List[str] = field(default_factory=list)
 
 
 @dataclass
