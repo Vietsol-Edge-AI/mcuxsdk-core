@@ -32,6 +32,10 @@
  * $Justification flexcan_c_ref_4$
  * On platform with 32 message buffers, startMbIdx is 0, endMbIdx is 31, startIdx and endIdx must be 0,
  * bitEnd must be 31. For loop is terminated when find received mailbox. So code will not take else branch.
+ * 
+ * $Justification flexcan_c_ref_5$
+ * FDCTRL[MBDSR0] field ranges from 0 to 3, each value corresponds to branch kFLEXCAN_8BperMB, kFLEXCAN_16BperMB,
+ * kFLEXCAN_32BperMB, kFLEXCAN_64BperMB. So code will not take default branch.
  */
 
 /*******************************************************************************
@@ -474,7 +478,11 @@ uint32_t FLEXCAN_GetFDMailboxOffset(CAN_Type *base, uint8_t mbIdx)
     uint32_t offset   = 0;
     uint32_t dataSize = (base->FDCTRL & CAN_FDCTRL_MBDSR0_MASK) >> CAN_FDCTRL_MBDSR0_SHIFT;
 
-    switch (dataSize)
+    /*
+     * $Branch Coverage Justification$
+     * default branch not covered. $ref flexcan_c_ref_5$.
+     */
+    switch (dataSize)   /* GCOVR_EXCL_BR_LINE */
     {
         case (uint32_t)kFLEXCAN_8BperMB:
             offset = (((uint32_t)mbIdx / 32U) * 512U + ((uint32_t)mbIdx % 32U) * 16U);
@@ -488,10 +496,14 @@ uint32_t FLEXCAN_GetFDMailboxOffset(CAN_Type *base, uint8_t mbIdx)
         case (uint32_t)kFLEXCAN_64BperMB:
             offset = (((uint32_t)mbIdx / 7U) * 512U + ((uint32_t)mbIdx % 7U) * 72U);
             break;
+        /* GCOVR_EXCL_START */
+        /* GCOVR_EXCL_BR_START */
         default:
             /* All the cases have been listed above, the default clause should not be reached. */
             assert(false);
             break;
+        /* GCOVR_EXCL_BR_STOP */
+        /* GCOVR_EXCL_STOP */
     }
 
     /* To get the dword aligned offset, need to divide by 4. */

@@ -2,6 +2,8 @@
 
 ## [2.14.7]
 
+- Improvements
+  - Add Coverage Justification for uncovered code.
 - Bug Fixes
   - Fixed violations of the CERT INT30-C INT31-C.
 
