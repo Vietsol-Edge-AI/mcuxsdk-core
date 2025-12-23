@@ -1,5 +1,12 @@
 # FLEXCAN
 
+## [2.15.0]
+
+- Improvements
+  - Add remote request and response non-blocking transfer APIs.
+    - `FLEXCAN_TransferRemoteRequestNonBlocking`
+    - `FLEXCAN_TransferRemoteResponseNonBlocking`
+
 ## [2.14.7]
 
 - Improvements

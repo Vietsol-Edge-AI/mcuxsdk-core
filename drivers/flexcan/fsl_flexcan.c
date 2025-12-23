@@ -4325,6 +4325,132 @@ status_t FLEXCAN_TransferFDReceiveNonBlocking(CAN_Type *base, flexcan_handle_t *
 #endif /* FSL_FEATURE_FLEXCAN_HAS_FLEXIBLE_DATA_RATE */
 
 /*!
+ * brief Sends a remote request frame using IRQ.
+ *
+ * This function sends a remote request frame using IRQ. This is a non-blocking function, which returns
+ * right away. When the remote request frame has been sent out, the send callback function is called.
+ * User should invoke API FLEXCAN_TransferReceiveNonBlocking to receive the response frame. Receive
+ * message buffer index should less than send message buffer index.
+ *
+ * param base FlexCAN peripheral base address.
+ * param handle FlexCAN handle pointer.
+ * param pMbXfer FlexCAN Message Buffer transfer structure. See the #flexcan_mb_transfer_t.
+ * retval kStatus_Success        Start Tx remote request frame sending process successfully.
+ * retval kStatus_Fail           Write Tx Message Buffer failed.
+ * retval kStatus_FLEXCAN_TxBusy Message Buffer is transmitting remote request frame.
+ */
+status_t FLEXCAN_TransferRemoteRequestNonBlocking(CAN_Type *base,
+                                                  flexcan_handle_t *handle,
+                                                  flexcan_mb_transfer_t *pMbXfer)
+{
+    /* Assertion. */
+    assert(NULL != handle);
+    assert(NULL != pMbXfer);
+    assert(pMbXfer->mbIdx <= (base->MCR & CAN_MCR_MAXMB_MASK));
+    assert((uint32_t)kFLEXCAN_FrameTypeRemote == pMbXfer->frame->type);
+#if !defined(NDEBUG)
+    assert(!FLEXCAN_IsMbOccupied(base, pMbXfer->mbIdx));
+#endif
+
+    status_t status;
+
+    /* Check if Message Buffer is idle. */
+    if ((uint8_t)kFLEXCAN_StateIdle == handle->mbState[pMbXfer->mbIdx])
+    {
+        handle->mbState[pMbXfer->mbIdx] = (uint8_t)kFLEXCAN_StateTxData;
+
+        if (kStatus_Success ==
+            FLEXCAN_WriteTxMb(base, pMbXfer->mbIdx, (const flexcan_frame_t *)(uintptr_t)pMbXfer->frame))
+        {
+            /* Enable Message Buffer Interrupt. */
+#if (defined(FSL_FEATURE_FLEXCAN_HAS_MORE_THAN_64_MB) && FSL_FEATURE_FLEXCAN_HAS_MORE_THAN_64_MB)
+            if (pMbXfer->mbIdx >= 64U)
+            {
+                FLEXCAN_EnableHigh64MbInterrupts(base, (uint64_t)1U << (pMbXfer->mbIdx - 64U));
+            }
+            else
+#endif
+            {
+                FLEXCAN_EnableMbInterrupts(base, (uint64_t)1U << pMbXfer->mbIdx);
+            }
+            status = kStatus_Success;
+        }
+        else
+        {
+            handle->mbState[pMbXfer->mbIdx] = (uint8_t)kFLEXCAN_StateIdle;
+            status                          = kStatus_Fail;
+        }
+    }
+    else
+    {
+        status = kStatus_FLEXCAN_TxBusy;
+    }
+
+    return status;
+}
+
+/*!
+ * brief Configures a FlexCAN Message Buffer for automatic remote response using IRQ.
+ *
+ * This function configures a Message Buffer to automatically respond to remote request frames using IRQ.
+ * This is a non-blocking function, which returns right away. When a matching remote request frame is
+ * received, the configured response frame will be transmitted automatically, and the callback function
+ * will be called.
+ * User should invoke this API when CTRL2[RRS]=0.
+ * When CTRL2[RRS]=0, if a remote request frame is received and matches a mailbox configured with
+ * CODE=kFLEXCAN_RxMbRanswer, the mailbox content will be transmitted as a response frame automatically.
+ * The received remote request frame is not stored.
+ *
+ * param base FlexCAN peripheral base address.
+ * param handle FlexCAN handle pointer.
+ * param pMbXfer FlexCAN Message Buffer transfer structure. See the #flexcan_mb_transfer_t.
+ * retval kStatus_Success   Configure remote response Message Buffer successfully.
+ * retval kStatus_Busy      Message Buffer is waiting for remote request frame or transmitting response frame.
+ */
+status_t FLEXCAN_TransferRemoteResponseNonBlocking(CAN_Type *base,
+                                                   flexcan_handle_t *handle,
+                                                   flexcan_mb_transfer_t *pMbXfer)
+{
+    status_t status;
+
+    /* Assertion. */
+    assert(NULL != handle);
+    assert(NULL != pMbXfer);
+    assert(pMbXfer->mbIdx <= (base->MCR & CAN_MCR_MAXMB_MASK));
+#if !defined(NDEBUG)
+    assert(!FLEXCAN_IsMbOccupied(base, pMbXfer->mbIdx));
+#endif
+
+    /* Check if Message Buffer is idle. */
+    if ((uint8_t)kFLEXCAN_StateIdle == handle->mbState[pMbXfer->mbIdx])
+    {
+        handle->mbState[pMbXfer->mbIdx] = (uint8_t)kFLEXCAN_StateTxData;
+
+        FLEXCAN_SetRemoteResponseMbConfig(base, pMbXfer->mbIdx, (const flexcan_frame_t *)(uintptr_t)pMbXfer->frame);
+
+        /* Enable Message Buffer Interrupt. */
+#if (defined(FSL_FEATURE_FLEXCAN_HAS_MORE_THAN_64_MB) && FSL_FEATURE_FLEXCAN_HAS_MORE_THAN_64_MB)
+        if (pMbXfer->mbIdx >= 64U)
+        {
+            FLEXCAN_EnableHigh64MbInterrupts(base, (uint64_t)1U << (pMbXfer->mbIdx - 64U));
+        }
+        else
+#endif
+        {
+            FLEXCAN_EnableMbInterrupts(base, (uint64_t)1U << pMbXfer->mbIdx);
+        }
+
+        status = kStatus_Success;
+    }
+    else
+    {
+        status = kStatus_Busy;
+    }
+
+    return status;
+}
+
+/*!
  * brief Receives a message from Legacy Rx FIFO using IRQ.
  *
  * This function receives a message using IRQ. This is a non-blocking function, which returns
