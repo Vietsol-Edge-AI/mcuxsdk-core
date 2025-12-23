@@ -6,6 +6,9 @@
   - Add remote request and response non-blocking transfer APIs.
     - `FLEXCAN_TransferRemoteRequestNonBlocking`
     - `FLEXCAN_TransferRemoteResponseNonBlocking`
+- Bug Fixes
+  - Fixed improper CS code when configuring FlexCAN Remote Response Message Buffer in
+    `FLEXCAN_SetRemoteResponseMbConfig`.
 
 ## [2.14.7]
 

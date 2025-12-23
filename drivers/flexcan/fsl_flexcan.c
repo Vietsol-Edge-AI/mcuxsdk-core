@@ -2694,7 +2694,7 @@ void FLEXCAN_SetRemoteResponseMbConfig(CAN_Type *base, uint8_t mbIdx, const flex
     cs_temp = 0;
 
     /* Inactivate Remote Response Message Buffer. */
-    base->MB[mbIdx].CS = (base->MB[mbIdx].CS & ~CAN_CS_CODE_MASK) | CAN_CS_CODE(kFLEXCAN_TxMbInactive);
+    base->MB[mbIdx].CS = (base->MB[mbIdx].CS & ~CAN_CS_CODE_MASK) | CAN_CS_CODE(kFLEXCAN_RxMbInactive);
 
     /* Fill Message ID field. */
     base->MB[mbIdx].ID = pFrame->id;
@@ -5163,12 +5163,6 @@ static status_t FLEXCAN_SubHandlerForMB(CAN_Type *base, flexcan_handle_t *handle
             }
             break;
 
-        /* Solve Rx Remote Frame. User need to Read the frame in Mail box in time by Read from MB API. */
-        case (uint8_t)kFLEXCAN_StateRxRemote:
-            status = kStatus_FLEXCAN_RxRemote;
-            FLEXCAN_TransferAbortReceive(base, handle, (uint8_t)result);
-            break;
-
         /* Solve Tx Data Frame. */
         case (uint8_t)kFLEXCAN_StateTxData:
             status = kStatus_FLEXCAN_TxIdle;
@@ -5182,6 +5176,12 @@ static status_t FLEXCAN_SubHandlerForMB(CAN_Type *base, flexcan_handle_t *handle
             {
                 FLEXCAN_TransferAbortSend(base, handle, (uint8_t)result);
             }
+            break;
+
+        /* Solve Rx Remote Frame. User need to Read the frame in Mail box in time by Read from MB API. */
+        case (uint8_t)kFLEXCAN_StateRxRemote:
+            status = kStatus_FLEXCAN_RxRemote;
+            FLEXCAN_TransferAbortReceive(base, handle, (uint8_t)result);
             break;
 
         /* Solve Tx Remote Frame. */
