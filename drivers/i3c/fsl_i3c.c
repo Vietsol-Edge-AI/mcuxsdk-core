@@ -877,7 +877,7 @@ void I3C_Init(I3C_Type *base, const i3c_config_t *config, uint32_t sourceClock_H
 #endif
                    (config->offline ? I3C_SCONFIG_OFFLINE_MASK : 0U) |
 #if !(defined(FSL_FEATURE_I3C_HAS_NO_SCONFIG_IDRAND) && FSL_FEATURE_I3C_HAS_NO_SCONFIG_IDRAND)
-                   I3C_SCONFIG_IDRAND(config->enableRandomPart) |
+                   (config->enableRandomPart ? I3C_SCONFIG_IDRAND_MASK : 0U) |
 #endif
 #if defined(FSL_FEATURE_I3C_HAS_HDROK) && FSL_FEATURE_I3C_HAS_HDROK
                    I3C_SCONFIG_HDROK((0U != (config->hdrMode & (uint8_t)kI3C_HDRModeDDR)) ? 1U : 0U) |
@@ -2847,7 +2847,7 @@ void I3C_SlaveInit(I3C_Type *base, const i3c_slave_config_t *slaveConfig, uint32
 #endif
                    (slaveConfig->offline ? I3C_SCONFIG_OFFLINE_MASK : 0U) |
 #if !(defined(FSL_FEATURE_I3C_HAS_NO_SCONFIG_IDRAND) && FSL_FEATURE_I3C_HAS_NO_SCONFIG_IDRAND)
-                   I3C_SCONFIG_IDRAND(slaveConfig->enableRandomPart) |
+                   (slaveConfig->enableRandomPart ? I3C_SCONFIG_IDRAND_MASK : 0U) |
 #endif
 #if defined(FSL_FEATURE_I3C_HAS_HDROK) && FSL_FEATURE_I3C_HAS_HDROK
                    I3C_SCONFIG_HDROK((0U != (slaveConfig->hdrMode & (uint8_t)kI3C_HDRModeDDR)) ? 1U : 0U) |
