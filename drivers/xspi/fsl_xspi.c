@@ -771,7 +771,7 @@ RAMFUNC void XSPI_UpdateDllValue(
         /* program DLL to desired delay. */
         base->DLLCR[0] |=
             XSPI_DLLCR_SLV_DLY_FINE(delayElementFineAdjust) | XSPI_DLLCR_SLV_DLY_COARSE(delayElementCoarseAdjust) |
-            XSPI_DLLCR_SLV_FINE_OFFSET(offsetDelayElementCount) | XSPI_DLLCR_DLL_CDL8(enableCourseDelayLine8);
+            XSPI_DLLCR_SLV_FINE_OFFSET(offsetDelayElementCount) | XSPI_DLLCR_DLL_CDL8(enableCourseDelayLine8 ? 1U : 0U);
         /* Load above settings into delay chain. */
         base->DLLCR[0] |= XSPI_DLLCR_SLV_UPD_MASK;
 
@@ -857,8 +857,7 @@ RAMFUNC status_t XSPI_SetDataLearningConfig(XSPI_Type *base, xspi_data_learning_
     }
 
     base->DLCR = ((base->DLCR) & ~(XSPI_DLCR_DLP_SEL_FA_MASK | XSPI_DLCR_DL_NONDLP_FLSH_MASK)) |
-                 (XSPI_DLCR_DLP_SEL_FA(ptrDataLearningConfig->padSelected) |
-                  XSPI_DLCR_DL_NONDLP_FLSH(ptrDataLearningConfig->deviceSupported));
+                 XSPI_DLCR_DLP_SEL_FA(ptrDataLearningConfig->padSelected) | XSPI_DLCR_DL_NONDLP_FLSH(ptrDataLearningConfig->deviceSupported ? 1U : 0U);
 
     base->DLPR = ptrDataLearningConfig->pattern;
 
@@ -1004,7 +1003,8 @@ RAMFUNC status_t XSPI_SetDeviceConfig(XSPI_Type *base, xspi_device_config_t *dev
 
     base->SFACR =
         (base->SFACR & ~(XSPI_SFACR_CAS_INTRLVD_MASK | XSPI_SFACR_CAS_MASK)) |
-        (XSPI_SFACR_CAS_INTRLVD(devConfig->enableCASInterleaving) | XSPI_SFACR_CAS(devConfig->columnAddrWidth));
+        (XSPI_SFACR_CAS_INTRLVD(devConfig->enableCASInterleaving ? 1U : 0U) |
+         XSPI_SFACR_CAS(devConfig->columnAddrWidth));
 
     if (devConfig->ptrDeviceRegInfo != NULL)
     {
@@ -1022,7 +1022,7 @@ RAMFUNC status_t XSPI_SetDeviceConfig(XSPI_Type *base, xspi_device_config_t *dev
         base->FLSHCR = ((base->FLSHCR) & ~XSPI_FLSHCR_TDH_MASK) |
                        XSPI_FLSHCR_TDH(devConfig->ptrDeviceDdrConfig->ddrDataAlignedClk);
         base->SFACR = ((base->SFACR) & ~XSPI_SFACR_BYTE_SWAP_MASK) |
-                      XSPI_SFACR_BYTE_SWAP(devConfig->ptrDeviceDdrConfig->enableByteSwapInOctalMode);
+                      XSPI_SFACR_BYTE_SWAP(devConfig->ptrDeviceDdrConfig->enableByteSwapInOctalMode ? 1U : 0U);
         base->MCR |= XSPI_MCR_DDR_EN_MASK;
     }
     else
@@ -1048,7 +1048,7 @@ RAMFUNC status_t XSPI_SetDeviceConfig(XSPI_Type *base, xspi_device_config_t *dev
         tmp32 |= XSPI_MCR_DQS_EN_MASK;
     }
 #if (defined(FSL_FEATURE_XSPI_HAS_DQS_LAT_EN) && FSL_FEATURE_XSPI_HAS_DQS_LAT_EN)
-    tmp32 |= XSPI_MCR_DQS_LAT_EN(devConfig->sampleClkConfig.enableDQSLatency) |
+    tmp32 |= XSPI_MCR_DQS_LAT_EN(devConfig->sampleClkConfig.enableDQSLatency ? 1U : 0U) |
              XSPI_MCR_DQS_FA_SEL((uint32_t)(devConfig->sampleClkConfig.sampleClkSource) & 0x3UL);
 #else
     tmp32 |= XSPI_MCR_DQS_FA_SEL((uint32_t)(devConfig->sampleClkConfig.sampleClkSource) & 0x3UL);
@@ -1231,7 +1231,7 @@ RAMFUNC void XSPI_UpdateSFPConfig(XSPI_Type *base,
                 *(uint32_t *)tgMdadRegAddr = XSPI_TG0MDAD_MIDMATCH(ptrSfpMdadConfig->tgMdad[i].masterIdReference) |
                                              XSPI_TG0MDAD_MASKTYPE(ptrSfpMdadConfig->tgMdad[i].maskType) |
                                              XSPI_TG0MDAD_MASK(ptrSfpMdadConfig->tgMdad[i].mask) |
-                                             XSPI_TG0MDAD_VLD(ptrSfpMdadConfig->tgMdad[i].assignIsValid) |
+                                             XSPI_TG0MDAD_VLD(ptrSfpMdadConfig->tgMdad[i].assignIsValid ? 1U : 0U) |
                                              XSPI_TG0MDAD_SA(ptrSfpMdadConfig->tgMdad[i].secureAttribute);
 
                 if (ptrSfpMdadConfig->tgMdad[i].enableDescriptorLock)
@@ -1504,7 +1504,8 @@ RAMFUNC status_t XSPI_StartIpAccess(
     }
 
     /* Set transfer size and sequence ID. */
-    (*(uint32_t *)sfpTgIpcrRegAddr) = XSPI_SFP_TG_IPCR_IDATSZ(byteSize) | XSPI_SFP_TG_IPCR_ARB_LOCK(lockArbitration) |
+    (*(uint32_t *)sfpTgIpcrRegAddr) = XSPI_SFP_TG_IPCR_IDATSZ(byteSize) |
+                                      XSPI_SFP_TG_IPCR_ARB_LOCK(lockArbitration ? 1U : 0U) |
                                       XSPI_SFP_TG_IPCR_SEQID(seqIndex);
     if (mdadEnabled && mdadValid)
     {
@@ -1597,7 +1598,8 @@ RAMFUNC status_t XSPI_StartIpAccessNonBlocking(
     /* Set target address. */
     (*(uint32_t *)sfpTgIpSfarRegAddr) = addr;
     /* Set transfer size and sequence ID. */
-    (*(uint32_t *)sfpTgIpcrRegAddr) = XSPI_SFP_TG_IPCR_IDATSZ(byteSize) | XSPI_SFP_TG_IPCR_ARB_LOCK(lockArbitration) |
+    (*(uint32_t *)sfpTgIpcrRegAddr) = XSPI_SFP_TG_IPCR_IDATSZ(byteSize) |
+                                      XSPI_SFP_TG_IPCR_ARB_LOCK(lockArbitration ? 1U : 0U) |
                                       XSPI_SFP_TG_IPCR_SEQID(seqIndex);
 
     if (mdadEnabled && mdadValid)
@@ -1956,7 +1958,7 @@ RAMFUNC status_t XSPI_ReadBlockingTG(XSPI_Type *base, xspi_target_group_t tgId, 
     __I uint32_t *sr       = (__I uint32_t *)XSPI_TG_REG_ADDR(base, tgId, SR);
     __IO uint32_t *errstat = (__IO uint32_t *)XSPI_TG_REG_ADDR(base, tgId, ERRSTAT);
 
-    uint32_t rxWatermark    = *rbct + 1UL;
+    uint32_t rxWatermark    = (*rbct & XSPI_RBCT_WMRK_MASK) + 1UL;
     status_t status         = kStatus_Success;
     uint32_t i              = 0UL;
     uint32_t removedCount   = 0UL;
@@ -2045,7 +2047,6 @@ RAMFUNC status_t XSPI_ReadBlockingTG(XSPI_Type *base, xspi_target_group_t tgId, 
             }
 
             /* RX buffer POP, trigger RX pop event. */
-
 #if (defined(FSL_FEATURE_XSPI_HAS_EENV) && FSL_FEATURE_XSPI_HAS_EENV)
             XSPI_TriggerRxBufferPopEventTG(base, tgId);
             while ((XSPI_GetRxBufferRemovedBytesCountTG(base, tgId) - removedCount) != (rxWatermark * 4UL))
@@ -2077,7 +2078,8 @@ RAMFUNC status_t XSPI_ReadBlockingTG(XSPI_Type *base, xspi_target_group_t tgId, 
 
                 for (i = 0U; i < size; i++)
                 {
-                    *buffer++ = ((uint8_t)(tempVal >> (8U * i)) & 0xFFU);
+                    /* INT31-C: Safe narrowing conversion */
+                    *buffer++ = (uint8_t)((tempVal >> (8U * i)) & 0xFFU);
                 }
             }
 
@@ -2411,7 +2413,7 @@ RAMFUNC status_t XSPI_SetAhbBufferConfig(XSPI_Type *base,
         /* Same bit field represent different feature for different AHB buffer. */
         if ((i == 0U) || (i == 1U))
         {
-            base->BUFCR[i] |= XSPI_BUFCR_HP_EN(ahbBufferConfigs[i]->enaPri.enablePriority);
+            base->BUFCR[i] |= XSPI_BUFCR_HP_EN(ahbBufferConfigs[i]->enaPri.enablePriority ? 1U : 0U);
         }
 
         if (i == 3U)
@@ -2688,7 +2690,8 @@ RAMFUNC status_t XSPI_BlockAccessAfterAhbWrite(XSPI_Type *base, bool blockSequen
 
     tmp32 = base->AWRCR;
     tmp32 &= ~(XSPI_AWRCR_PPW_RD_DIS_MASK | XSPI_AWRCR_PPW_WR_DIS_MASK);
-    tmp32 |= XSPI_AWRCR_PPW_RD_DIS(blockRead) | XSPI_AWRCR_PPW_WR_DIS(blockSequentWrite);
+    tmp32 |= XSPI_AWRCR_PPW_RD_DIS(blockRead ? 1U : 0U) |
+             XSPI_AWRCR_PPW_WR_DIS(blockSequentWrite ? 1U : 0U);
 
     base->AWRCR = tmp32;
 
@@ -2843,8 +2846,8 @@ RAMFUNC status_t XSPI_SetSFMStatusRegInfo(XSPI_Type *base, xspi_device_status_re
     tmp32 = (base->PPW_RDSR) &
             ~(XSPI_PPW_RDSR_RDSR_VAL_CHK_MASK | XSPI_PPW_RDSR_RDSR_HWORD_SEL_MASK | XSPI_PPW_RDSR_LOC_MASK);
 
-    tmp32 |= XSPI_PPW_RDSR_RDSR_VAL_CHK(ptrStatusRegInfo->value1Expired) |
-             XSPI_PPW_RDSR_RDSR_HWORD_SEL(ptrStatusRegInfo->upperHalfWordSelected) |
+    tmp32 |= XSPI_PPW_RDSR_RDSR_VAL_CHK(ptrStatusRegInfo->value1Expired ? 1U : 0U) |
+             XSPI_PPW_RDSR_RDSR_HWORD_SEL(ptrStatusRegInfo->upperHalfWordSelected ? 1U : 0U) |
              XSPI_PPW_RDSR_LOC(ptrStatusRegInfo->wipLocation);
 
     base->PPW_RDSR = tmp32;
@@ -2907,10 +2910,10 @@ RAMFUNC xspi_ahb_sub_buffer_status_t XSPI_GetAhbSubBufferStatus(XSPI_Type *base,
 {
     uint32_t tmp32 = 0UL;
     uint32_t shift = 8UL * (uint32_t)ahbBufferId + 2UL * (uint32_t)subBufferId;
-    uint32_t mask  = 0x3UL << shift;
 
     tmp32 = base->AHB_BUF_STATUS;
-    return (xspi_ahb_sub_buffer_status_t)(uint32_t)((tmp32 & mask) >> shift);
+
+    return (xspi_ahb_sub_buffer_status_t)((tmp32 >> shift) & 0x3UL);
 }
 
 /*!
@@ -3193,10 +3196,12 @@ RAMFUNC static void XSPI_CommonIRQHandler(XSPI_Type *base, xspi_handle_t *handle
         /* RX buffer watermark exceeded, read data to buffer and pop RX buffer. */
         uint32_t rxDataSize = XSPI_GetRxBufferAvailableBytesCount(base);
 #endif
-        uint32_t rxBufferWaterMark = *rbct + 1UL;
+        uint32_t rxBufferWaterMark = (*rbct & XSPI_RBCT_WMRK_MASK) + 1UL;
         bufferIndex                = handle->transferTotalSize - handle->dataSize;
         buffer                     = (uint8_t *)(handle->data) + bufferIndex;
 
+        /* INT30-C: Prevent unsigned integer underflow */
+        assert(handle->dataSize >= rxDataSize);
         handle->dataSize -= rxDataSize;
         while (rxDataSize != 0UL)
         {
@@ -3248,7 +3253,8 @@ RAMFUNC static void XSPI_CommonIRQHandler(XSPI_Type *base, xspi_handle_t *handle
 
                     for (i = 0U; i < rxDataSize; i++)
                     {
-                        *buffer++ = ((uint8_t)(tmpVal >> (8U * i)) & 0xFFU);
+                        /* INT31-C: Safe narrowing conversion */
+                        *buffer++ = (uint8_t)((tmpVal >> (8U * i)) & 0xFFU);
                     }
                 }
             }
@@ -3372,6 +3378,9 @@ RAMFUNC static uint32_t XSPI_Cache64_GetInstanceByAddr(uint32_t address)
 
     while (i < ARRAY_SIZE(s_xspi_cache64ctrlBases))
     {
+        /* INT30-C: Prevent unsigned overflow in address range check */
+        assert(phyMemSize[i] > 0U);
+        assert(phyMemBase[i] <= (UINT32_MAX - phyMemSize[i] + 1U));
         if ((MSDK_REG_SECURE_ADDR(address) >= MSDK_REG_SECURE_ADDR(phyMemBase[i])) &&
             (MSDK_REG_SECURE_ADDR(address) < MSDK_REG_SECURE_ADDR(phyMemBase[i] + phyMemSize[i] - 0x01U)))
         {
