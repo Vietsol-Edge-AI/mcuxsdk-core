@@ -87,8 +87,8 @@ static inline void PMU_UpdateVDDCoreInActiveMode(PMU_Type *base, uint8_t value)
  */
 static inline void PMU_UpdateVDDCoreInLpMode(PMU_Type *base, uint8_t value)
 {
-    base->VDD_CORE_AON_CONFIG = ((base->VDD_CORE_AON_CONFIG) & ~(PMU_VDD_CORE_AON_CONFIG_VDD_CORE_AON_DSCONFIG_MASK)) | \
-                            PMU_VDD_CORE_AON_CONFIG_VDD_CORE_AON_DSCONFIG(value);
+    base->VDD_CORE_AON_CONFIG = ((base->VDD_CORE_AON_CONFIG) & ~(PMU_VDD_CORE_AON_CONFIG_VDD_CORE_AON_DCONFIG_MASK)) | \
+                            PMU_VDD_CORE_AON_CONFIG_VDD_CORE_AON_DCONFIG(value);
 }
 
 /*!
