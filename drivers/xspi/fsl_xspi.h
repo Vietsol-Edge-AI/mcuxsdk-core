@@ -1338,6 +1338,7 @@ RAMFUNC static inline void XSPI_EnableInvertedSerialClockOutput(XSPI_Type *base,
         XSPI_EnableModule(base, false);
     }
 
+#if (defined(XSPI_MCR_CKN_FA_EN_MASK) && XSPI_MCR_CKN_FA_EN_MASK)
     if (enable)
     {
         base->MCR |= XSPI_MCR_CKN_FA_EN_MASK;
@@ -1346,6 +1347,7 @@ RAMFUNC static inline void XSPI_EnableInvertedSerialClockOutput(XSPI_Type *base,
     {
         base->MCR &= ~XSPI_MCR_CKN_FA_EN_MASK;
     }
+#endif
 
     if (moduleEnabled)
     {

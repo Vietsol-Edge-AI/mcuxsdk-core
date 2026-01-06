@@ -906,6 +906,7 @@ RAMFUNC status_t XSPI_SetDeviceConfig(XSPI_Type *base, xspi_device_config_t *dev
         XSPI_EnableModule(base, false);
     }
 
+#if (defined(XSPI_MCR_CKN_FA_EN_MASK) && XSPI_MCR_CKN_FA_EN_MASK)
     if (devConfig->enableCknPad)
     {
         base->MCR |= XSPI_MCR_CKN_FA_EN_MASK;
@@ -914,6 +915,7 @@ RAMFUNC status_t XSPI_SetDeviceConfig(XSPI_Type *base, xspi_device_config_t *dev
     {
         base->MCR &= ~XSPI_MCR_CKN_FA_EN_MASK;
     }
+#endif
 
     uint8_t tmp8 = 0U;
     if (devConfig->deviceInterface == kXSPI_StrandardExtendedSPI)
