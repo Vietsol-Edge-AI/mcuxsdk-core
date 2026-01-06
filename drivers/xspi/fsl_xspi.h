@@ -1422,7 +1422,7 @@ RAMFUNC static inline void XSPI_SoftwareReset(XSPI_Type *base)
 #if (defined(FSL_FEATURE_XSPI_HAS_EENV) && FSL_FEATURE_XSPI_HAS_EENV)
     for (uint8_t i = 0; i < XSPI_TARGET_GROUP_COUNT; i++)
     {
-        XSPI_ResetTgQueueTG(base, i);
+        XSPI_ResetTgQueueTG(base, (xspi_target_group_t)i);
     }
 #else
     XSPI_ResetTgQueue(base);
