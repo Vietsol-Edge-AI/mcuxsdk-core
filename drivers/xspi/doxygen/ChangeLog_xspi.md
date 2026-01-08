@@ -1,16 +1,14 @@
 # XSPI
 
-## [2.8.0]
+## [2.7.0]
 
 - New Features
   - Added EENV support to setup XSPI based on diffferent target groups.
+
 - Bug Fixes
   - Fixed issue of XSPI_UpdateSFPConfig() function. Disabled all global MDAD and FRAD setting before updating.
 
-## [2.7.0]
-
 - Improvements
-  - Support for macro to place functions in RAM. Functions of file needs to be place in RAM while using XSPI1 for RT700.
   - Support added to place variables in RAM. Its required when code from ram is using these variables.
 
 ## [2.6.0]
