@@ -8,7 +8,10 @@
 - Bug Fixes
   - Fixed issue of XSPI_UpdateSFPConfig() function. Disabled all global MDAD and FRAD setting before updating.
 
+## [2.6.1]
+
 - Improvements
+  - Support for macro to place functions in RAM. Functions of file needs to be place in RAM while using XSPI1 for RT700.
   - Support added to place variables in RAM. Its required when code from ram is using these variables.
 
 ## [2.6.0]
@@ -21,7 +24,6 @@
     - FSL_FEATURE_XSPI_HAS_DOZE_MODE
   - Enhanced register access handling using conditional compilation to accommodate hardware differences.
   - Added supports of MAIN_XSPI0_DriverIRQHandler() and MAIN_XSPI1_DriverIRQHandler.
-  - Support for macro to place functions in RAM. Functions of file needs to be place in RAM while using XSPI1 for RT700.
 
 - New Features
   - Added AHB write terminate functionality support for devices with FSL_FEATURE_XSPI_HAS_WRTER_EN_BIT.
