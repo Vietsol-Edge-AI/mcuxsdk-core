@@ -28,6 +28,8 @@ of a particular PWM channel.
   The function PWM_SetupInputCapture() sets up a PWM channel for input capture.
 The user can specify the capture edge and the mode; one-shot capture or free-running
 capture.
+  After configuring input capture, PWM_GetInputCaptureValue() can be used to read the
+captured counter value for a specified edge when related capture flag is set.
 
 ## Fault operation  {#PWMFaultOperation}
   The function PWM_SetupFault() sets up the properties for each fault.

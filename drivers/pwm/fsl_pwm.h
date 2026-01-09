@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2015, Freescale Semiconductor, Inc.
- * Copyright 2016-2022, 2024-2025 NXP
+ * Copyright 2016-2022, 2024-2026 NXP
  *
  * SPDX-License-Identifier: BSD-3-Clause
  */
@@ -19,7 +19,7 @@
  ******************************************************************************/
 /*! @name Driver version */
 /*! @{ */
-#define FSL_PWM_DRIVER_VERSION (MAKE_VERSION(2, 9, 1)) /*!< Version 2.9.1 */
+#define FSL_PWM_DRIVER_VERSION (MAKE_VERSION(2, 9, 2)) /*!< Version 2.9.2 */
 /*! @} */
 
 /*! Number of bits per submodule for software output control */
@@ -654,6 +654,27 @@ void PWM_SetupInputCapture(PWM_Type *base,
                            pwm_submodule_t subModule,
                            pwm_channels_t pwmChannel,
                            const pwm_input_capture_param_t *inputCaptureParams);
+
+/*!
+ * @brief Read the capture value.
+ *
+ * This function reads the capture value stored in channel's capture value register.
+ * It should be called when a valid edge is detected on the input capture pin(related capture flag is set).
+ * The capture circuit has two input capture registers per channel for first edge and second edge capture.
+ *
+ * @param base         PWM peripheral base address
+ * @param subModule    PWM submodule to configure
+ * @param pwmChannel   PWM channel to read from (PWM A, PWM B, or PWM X)
+ * @param captureIndex Capture register to read (0 for first edge capture, 1 for second edge capture)
+ *
+ * @return Returns kStatus_InvalidArgument if pwmChannel does not support capture feature;
+ *         kStatus_Success otherwise
+ */
+status_t PWM_GetInputCaptureValue(PWM_Type *base,
+                                  pwm_submodule_t subModule,
+                                  pwm_channels_t pwmChannel,
+                                  uint8_t captureIndex,
+                                  uint16_t *captureValue);
 
 /*!
  * @brief Sets up the PWM fault channel 0 input filter.

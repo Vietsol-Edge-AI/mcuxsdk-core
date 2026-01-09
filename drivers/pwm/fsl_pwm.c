@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2015, Freescale Semiconductor, Inc.
- * Copyright 2016-2022, 2024-2025 NXP
+ * Copyright 2016-2022, 2024-2026 NXP
  *
  * SPDX-License-Identifier: BSD-3-Clause
  */
@@ -954,6 +954,98 @@ void PWM_SetupInputCapture(PWM_Type *base,
             assert(false);
             break;
     }
+}
+
+/*!
+ * brief Read the capture value.
+ *
+ * This function reads the capture value stored in channel's capture value register.
+ * It should be called when a valid edge is detected on the input capture pin(related capture flag is set).
+ * The capture circuit has two input capture registers per channel for first edge and second edge capture.
+ *
+ * param base         PWM peripheral base address
+ * param subModule    PWM submodule to configure
+ * param pwmChannel   PWM channel to read from (PWM A, PWM B, or PWM X)
+ * param captureIndex Capture register to read (0 for first edge capture, 1 for second edge capture)
+ *
+ * return Returns kStatus_InvalidArgument if pwmChannel does not support capture feature;
+ *        kStatus_Success otherwise
+ */
+status_t PWM_GetInputCaptureValue(PWM_Type *base,
+                                  pwm_submodule_t subModule,
+                                  pwm_channels_t pwmChannel,
+                                  uint8_t captureIndex,
+                                  uint16_t *captureValue)
+{
+    assert(captureIndex <= 1U);
+    assert((uint32_t)subModule < FSL_FEATURE_PWM_SUBMODULE_COUNT);
+
+    switch (pwmChannel)
+    {
+#if defined(FSL_FEATURE_PWM_HAS_CAPTURE_ON_CHANNELA) && FSL_FEATURE_PWM_HAS_CAPTURE_ON_CHANNELA
+        case kPWM_PwmA:
+            /* Channel A always uses CVAL0 and CVAL1 */
+            if (captureIndex == 0U)
+            {
+                *captureValue = base->SM[subModule].CVAL0;
+            }
+            else
+            {
+                *captureValue = base->SM[subModule].CVAL1;
+            }
+            break;
+#endif /* FSL_FEATURE_PWM_HAS_CAPTURE_ON_CHANNELA */
+
+#if defined(FSL_FEATURE_PWM_HAS_CAPTURE_ON_CHANNELB) && FSL_FEATURE_PWM_HAS_CAPTURE_ON_CHANNELB
+        case kPWM_PwmB:
+            /* Channel B always uses CVAL2 and CVAL3 */
+            if (captureIndex == 0U)
+            {
+                *captureValue = base->SM[subModule].CVAL2;
+            }
+            else
+            {
+                *captureValue = base->SM[subModule].CVAL3;
+            }
+            break;
+#endif /* FSL_FEATURE_PWM_HAS_CAPTURE_ON_CHANNELB */
+
+#if defined(FSL_FEATURE_PWM_HAS_CAPTURE_ON_CHANNELX) && FSL_FEATURE_PWM_HAS_CAPTURE_ON_CHANNELX
+        case kPWM_PwmX:
+            /* Channel X register mapping depends on device:
+             * - If Channel A/B capture exists: X uses CVAL4/5 (MIMXRT1189, etc.)
+             * - If only X capture exists: X uses CVAL0/1 (MCXA153, etc.)
+             */
+#if (defined(FSL_FEATURE_PWM_HAS_CAPTURE_ON_CHANNELA) && FSL_FEATURE_PWM_HAS_CAPTURE_ON_CHANNELA) && \
+    (defined(FSL_FEATURE_PWM_HAS_CAPTURE_ON_CHANNELB) && FSL_FEATURE_PWM_HAS_CAPTURE_ON_CHANNELB)
+            /* Multi-channel capture device: X uses CVAL4/5 */
+            if (captureIndex == 0U)
+            {
+                *captureValue = base->SM[subModule].CVAL4;
+            }
+            else
+            {
+                *captureValue = base->SM[subModule].CVAL5;
+            }
+#else
+            /* X-only capture device: X uses CVAL0/1 */
+            if (captureIndex == 0U)
+            {
+                *captureValue = base->SM[subModule].CVAL0;
+            }
+            else
+            {
+                *captureValue = base->SM[subModule].CVAL1;
+            }
+#endif /* FSL_FEATURE_PWM_HAS_CAPTURE_ON_CHANNELA && FSL_FEATURE_PWM_HAS_CAPTURE_ON_CHANNELB*/
+            break;
+#endif /* FSL_FEATURE_PWM_HAS_CAPTURE_ON_CHANNELX */
+
+        default:
+            return kStatus_InvalidArgument;
+    }
+
+    return kStatus_Success;
 }
 
 /*!

@@ -1,5 +1,10 @@
 # PWM
 
+## [2.9.2]
+
+- Improvements
+  - Add new API `PWM_GetInputCaptureValue` to read the value captured from the submodule counter.
+
 ## [2.9.1]
 
 - Improvements
