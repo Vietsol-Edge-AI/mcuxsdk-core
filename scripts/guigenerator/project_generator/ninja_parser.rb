@@ -300,8 +300,14 @@ class NinjaParser
               else
                 begin
                   if ENV['standalone'] == 'true'
-                    # Use path relative to output dir for standalone project if the file is out of the repo
-                    include_path = Pathname.new(_flag[1]).relative_path_from(Pathname.new(File.join(@outdir, @toolchain))).to_s
+                    # if include path is same as output dir for standalone project,
+                    # means it's in project root path, use './'
+                    if Pathname.new(_flag[1]).cleanpath == Pathname.new(@outdir).cleanpath
+                      include_path = './'
+                    else
+                      # Use path relative to output dir for standalone project if the file is out of the repo
+                      include_path = Pathname.new(_flag[1]).relative_path_from(Pathname.new(File.join(@outdir, @toolchain))).to_s
+                    end
                   else
                     # Use relative path for GUI project
                     include_path = Pathname.new(_flag[1]).relative_path_from(Pathname.new(REPO_ROOT_PATH)).cleanpath.to_s
