@@ -50,47 +50,6 @@
 #define XSPI_SFP_FRAD_COUNT FSL_FEATURE_XSPI_SFP_FRAD_COUNT
 #endif
 
-/* Map legacy APIs to TG-suffixed implementations. */
-#define XSPI_EnableTxDMA(base, enable)          XSPI_EnableTxDMATG((base), (xspi_target_group_t)0, enable)
-#define XSPI_EnableRxDMA(base, enable)          XSPI_EnableRxDMATG((base), (xspi_target_group_t)0, enable)
-#define XSPI_GetTxFifoAddress(base)             XSPI_GetTxFifoAddressTG((base), (xspi_target_group_t)0)
-#define XSPI_GetRxFifoAddress(base)             XSPI_GetRxFifoAddressTG((base), (xspi_target_group_t)0)
-#define XSPI_GetErrorStatusFlags(base)          XSPI_GetErrorStatusFlagsTG((base), (xspi_target_group_t)0)
-#define XSPI_ClearErrorStatusFlags(base, flags) XSPI_ClearErrorStatusFlagsTG((base), (xspi_target_group_t)0, (flags))
-#define XSPI_GetInterruptStatusFlags(base)      XSPI_GetInterruptStatusFlagsTG((base), (xspi_target_group_t)0)
-#define XSPI_CheckIpRequestGranted(base)        XSPI_CheckIpRequestGrantedTG((base), (xspi_target_group_t)0)
-#define XSPI_GetCmdExecutionArbitrationStatusFlags(base) \
-    XSPI_GetCmdExecutionArbitrationStatusFlagsTG((base), (xspi_target_group_t)0)
-#define XSPI_ClearCmdExecutionArbitrationStatusFlags(base, flags) \
-    XSPI_ClearCmdExecutionArbitrationStatusFlagsTG((base), (xspi_target_group_t)0, (flags))
-#define XSPI_ClearTxBuffer(base) XSPI_ClearTxBufferTG((base), (xspi_target_group_t)0)
-#define XSPI_ClearRxBuffer(base) XSPI_ClearRxBufferTG((base), (xspi_target_group_t)0)
-#define XSPI_ResetTxRxBuffer(base, txFifo, rxFifo) \
-    XSPI_ResetTxRxBufferTG((base), (xspi_target_group_t)0, txFifo, rxFifo)
-#define XSPI_UpdateRxBufferWaterMark(base, waterMark) \
-    XSPI_UpdateRxBufferWaterMarkTG((base), (xspi_target_group_t)0, (waterMark))
-#define XSPI_UpdateTxBufferWaterMark(base, waterMark) \
-    XSPI_UpdateTxBufferWaterMarkTG((base), (xspi_target_group_t)0, (waterMark))
-#define XSPI_UnlockIpAccessArbitration(base)      XSPI_UnlockIpAccessArbitrationTG((base), (xspi_target_group_t)0)
-#define XSPI_CheckAndClearError(base, status)     XSPI_CheckAndClearErrorTG((base), (xspi_target_group_t)0, (status))
-#define XSPI_WriteTxBuffer(base, data)            XSPI_WriteTxBufferTG((base), (xspi_target_group_t)0, (data))
-#define XSPI_ReadRxBuffer(base, fifoIndex)        XSPI_ReadRxBufferTG((base), (xspi_target_group_t)0, (fifoIndex))
-#define XSPI_TriggerRxBufferPopEvent(base)        XSPI_TriggerRxBufferPopEventTG((base), (xspi_target_group_t)0)
-#define XSPI_CheckRxBufferWaterMarkExceed(base)   XSPI_CheckRxBufferWaterMarkExceedTG((base), (xspi_target_group_t)0)
-#define XSPI_GetRxBufferAvailableBytesCount(base) XSPI_GetRxBufferAvailableBytesCountTG((base), (xspi_target_group_t)0)
-#define XSPI_GetRxBufferRemovedBytesCount(base)   XSPI_GetRxBufferRemovedBytesCountTG((base), (xspi_target_group_t)0)
-#define XSPI_CheckIPAccessGranted(base)           XSPI_CheckFSMValidTG((base), (xspi_target_group_t)0)
-#define XSPI_CheckIpWriteTriggered(base)          XSPI_CheckIpWriteTriggeredTG((base), (xspi_target_group_t)0)
-#define XSPI_CheckIpReadTriggered(base)           XSPI_CheckIpReadTriggeredTG((base), (xspi_target_group_t)0)
-#define XSPI_CheckFSMValid(base)                  XSPI_CheckFSMValidTG((base), (xspi_target_group_t)0)
-#define XSPI_CheckTxBuffLockOpen(base)            XSPI_CheckTxBuffLockOpenTG((base), (xspi_target_group_t)0)
-#define XSPI_EnableInterrupts(base, mask)         XSPI_EnableInterruptsTG((base), (xspi_target_group_t)0, mask)
-#define XSPI_DisableInterrupts(base, mask)        XSPI_DisableInterruptsTG((base), (xspi_target_group_t)0, mask)
-#define XSPI_SetSFPFradEALMode(base, ealMode, fradId) \
-    XSPI_SetSFPFradEALModeTG((base), (xspi_target_group_t)0, ealMode, fradId)
-#define XSPI_WriteBlocking(base, buffer, size) XSPI_WriteBlockingTG((base), (xspi_target_group_t)0, buffer, size)
-#define XSPI_ReadBlocking(base, buffer, size)  XSPI_ReadBlockingTG((base), (xspi_target_group_t)0, buffer, size)
-
 #if (defined(FSL_FEATURE_XSPI_HAS_EENV) && FSL_FEATURE_XSPI_HAS_EENV)
 #define XSPI_TG_REG_ADDR(base, tg, reg)                             \
     ((uint32_t)(((uint32_t)tg == 0U) ? (uint32_t)(&((base)->reg)) : \
@@ -1785,6 +1744,7 @@ RAMFUNC static inline uint32_t XSPI_GetRxFifoAddressTG(XSPI_Type *base, xspi_tar
  * @param tgId Target group ID.
  *
  * @return All asserted error status flags for the target group.
+ *   Should be the OR'ed value of @ref xspi_error_flag_t.
  */
 RAMFUNC static inline uint32_t XSPI_GetErrorStatusFlagsTG(XSPI_Type *base, xspi_target_group_t tgId)
 {
@@ -1796,7 +1756,7 @@ RAMFUNC static inline uint32_t XSPI_GetErrorStatusFlagsTG(XSPI_Type *base, xspi_
  *
  * @param base XSPI peripheral base address.
  * @param tgId Target group ID.
- * @param flags Error flags to clear.
+ * @param flags Error flags to clear. Should be the OR'ed value of @ref xspi_error_flag_t.
  */
 RAMFUNC static inline void XSPI_ClearErrorStatusFlagsTG(XSPI_Type *base, xspi_target_group_t tgId, uint32_t flags)
 {
@@ -1805,27 +1765,13 @@ RAMFUNC static inline void XSPI_ClearErrorStatusFlagsTG(XSPI_Type *base, xspi_ta
 }
 
 /*!
- * @brief Get the XSPI interrupt status flags for specific target group.
- *
- * @param[in] base XSPI peripheral base address.
- * @param[in] tgId Target group ID.
- *
- * @return interrupt status flag for the target group, use status flag to AND #xspi_flags_t could get the related
- * status.
- */
-RAMFUNC static inline uint32_t XSPI_GetInterruptStatusFlagsTG(XSPI_Type *base, xspi_target_group_t tgId)
-{
-    return XSPI_TG_REG_VAL(base, tgId, ERRSTAT);
-}
-
-/*!
  * @brief Check if the IP access request was granted access for specific target group.
  *
  * @param[in] base XSPI peripheral base address.
  * @param[in] tgId Target group ID.
  *
- * @retval true Ip request granted for the target group.
- * @retval false Ip reqest not granted for the target group.
+ * @retval true The IP access is granted arbitration for the target group.
+ * @retval false No IP access is queued for the target group.
  */
 RAMFUNC static inline bool XSPI_CheckIpRequestGrantedTG(XSPI_Type *base, xspi_target_group_t tgId)
 {
@@ -1854,6 +1800,7 @@ RAMFUNC static inline bool XSPI_GetBusIdleStatusTG(XSPI_Type *base, xspi_target_
  * @param[in] tgId Target group ID.
  *
  * @return The assert flags about SFM command execution and arbitration for the target group.
+ *  should be the OR'ed value of @ref xspi_cmd_execution_arbitration_flag_t.
  */
 RAMFUNC static inline uint32_t XSPI_GetCmdExecutionArbitrationStatusFlagsTG(XSPI_Type *base, xspi_target_group_t tgId)
 {
@@ -2345,6 +2292,14 @@ void XSPI_ClearTgAddrWriteStatus(XSPI_Type *base, xspi_target_group_t tgId);
                         to store address write status.
  */
 void XSPI_GetTgAddrWriteStatus(XSPI_Type *base, xspi_target_group_t tgId, xspi_tg_add_write_status_t *ptrStatus);
+
+/*!
+ * @brief Unlock Ip access arbitration.
+ *
+ * @param[in] base XSPI peripheral base address.
+ * @param[in] tgId Specify the target group.
+ */
+RAMFUNC void XSPI_UnlockIpAccessArbitrationTG(XSPI_Type *base, xspi_target_group_t tgId);
 
 /*!
  * @brief Clear Ip access sequence pointer.
@@ -3026,6 +2981,411 @@ status_t XSPI_EnableAhbWriteTerminate(XSPI_Type *base, bool enable);
  * @retval kStatus_Success Success to set AHB read status register sequence Id.
  */
 status_t XSPI_SetAhbAccessConfig(XSPI_Type *base, xspi_ahb_access_config_t *ptrAhbAccessConfig);
+
+/*! @} */
+
+/*!
+ * @name Map legacy APIs to TG-suffixed implementations.
+ * @{
+ */
+
+/*!
+ * @brief Enables or disables XSPI IP Tx FIFO DMA requests.
+ *
+ * @param[in] base XSPI peripheral base address.
+ * @param[in] enable Enable flag for transmit DMA request. Pass true for enable, false for disable.
+ */
+RAMFUNC static inline void XSPI_EnableTxDMA(XSPI_Type *base, bool enable)
+{
+    XSPI_EnableTxDMATG(base, (xspi_target_group_t)0, enable);
+}
+
+/*!
+ * @brief Enables or disables XSPI IP Rx FIFO DMA requests.
+ *
+ * @param[in] base XSPI peripheral base address.
+ * @param[in] enable Enable flag for receive DMA request. Pass true for enable, false for disable.
+ */
+RAMFUNC static inline void XSPI_EnableRxDMA(XSPI_Type *base, bool enable)
+{
+    XSPI_EnableRxDMATG(base, (xspi_target_group_t)0, enable);
+}
+
+/*!
+ * @brief Gets XSPI IP tx fifo address for DMA transfer.
+ *
+ * @param[in] base XSPI peripheral base address.
+ * @return The tx fifo address.
+ */
+RAMFUNC static inline uint32_t XSPI_GetTxFifoAddress(XSPI_Type *base)
+{
+    return XSPI_GetTxFifoAddressTG(base, (xspi_target_group_t)0);
+}
+
+/*!
+ * @brief Gets XSPI IP rx fifo address for DMA transfer.
+ *
+ * @param[in] base XSPI peripheral base address.
+ * @return The rx fifo address.
+ */
+RAMFUNC static inline uint32_t XSPI_GetRxFifoAddress(XSPI_Type *base)
+{
+    return XSPI_GetRxFifoAddressTG(base, (xspi_target_group_t)0);
+}
+
+/*!
+ * @brief Get error status flags.
+ *
+ * @param base XSPI peripheral base address.
+ *
+ * @return All asserted error status flags for the target group.
+ *   Should be the OR'ed value of @ref xspi_error_flag_t.
+ */
+RAMFUNC static inline uint32_t XSPI_GetErrorStatusFlags(XSPI_Type *base)
+{
+    return XSPI_GetErrorStatusFlagsTG(base, (xspi_target_group_t)0);
+}
+
+/*!
+ * @brief Clear input error status flags.
+ *
+ * @param base XSPI peripheral base address.
+ * @param flags Error flags to clear. Should be the OR'ed value of @ref xspi_error_flag_t.
+ */
+RAMFUNC static inline void XSPI_ClearErrorStatusFlags(XSPI_Type *base, uint32_t flags)
+{
+    XSPI_ClearErrorStatusFlagsTG(base, (xspi_target_group_t)0, flags);
+}
+
+/*!
+ * @brief Get the XSPI interrupt status flags.
+ *
+ * @deprecated Please use XSPI_GetErrorStatusFlags() as instead.
+ * @param[in] base XSPI peripheral base address.
+ * @return interrupt status flag, use status flag to AND #xspi_flags_t could get the related status.
+ */
+RAMFUNC static inline uint32_t XSPI_GetInterruptStatusFlags(XSPI_Type *base)
+{
+    return base->ERRSTAT;
+}
+
+/*!
+ * @brief Check if the IP access request was granted access.
+ *
+ * @param[in] base XSPI peripheral base address.
+ * @retval true IP request granted.
+ * @retval false IP request not granted.
+ */
+RAMFUNC static inline bool XSPI_CheckIpRequestGranted(XSPI_Type *base)
+{
+    return XSPI_CheckIpRequestGrantedTG(base, (xspi_target_group_t)0);
+}
+
+/*!
+ * @brief Get asserted flags about SFM command execution and arbitration.
+ *
+ * @param[in] base XSPI peripheral base address.
+ *
+ * @return The assert flags about SFM command execution and arbitration,
+ *  should be the OR'ed value of @ref xspi_cmd_execution_arbitration_flag_t.
+ */
+RAMFUNC static inline uint32_t XSPI_GetCmdExecutionArbitrationStatusFlags(XSPI_Type *base)
+{
+    return XSPI_GetCmdExecutionArbitrationStatusFlagsTG(base, (xspi_target_group_t)0);
+}
+
+/*!
+ * @brief Clear asserted flags about SFM command execution and arbitration.
+ *
+ * @param[in] base XSPI peripheral base address.
+ * @param[in] flags The mask of flags to clear.
+ */
+RAMFUNC static inline void XSPI_ClearCmdExecutionArbitrationStatusFlags(XSPI_Type *base, uint32_t flags)
+{
+    XSPI_ClearCmdExecutionArbitrationStatusFlagsTG(base, (xspi_target_group_t)0, flags);
+}
+
+/*!
+ * @brief Clear TX buffer.
+ *
+ * @param[in] base XSPI peripheral base address.
+ */
+RAMFUNC static inline void XSPI_ClearTxBuffer(XSPI_Type *base)
+{
+    XSPI_ClearTxBufferTG(base, (xspi_target_group_t)0);
+}
+
+/*!
+ * @brief Clear RX buffer.
+ *
+ * @param[in] base XSPI peripheral base address.
+ */
+RAMFUNC static inline void XSPI_ClearRxBuffer(XSPI_Type *base)
+{
+    XSPI_ClearRxBufferTG(base, (xspi_target_group_t)0);
+}
+
+/*!
+ * @brief Clear the XSPI IP TX/RX buffer logic.
+ *
+ * @param[in] base XSPI peripheral base address.
+ * @param[in] txFifo Pass true to reset TX FIFO.
+ * @param[in] rxFifo Pass true to reset RX FIFO.
+ */
+RAMFUNC static inline void XSPI_ResetTxRxBuffer(XSPI_Type *base, bool txFifo, bool rxFifo)
+{
+    XSPI_ResetTxRxBufferTG(base, (xspi_target_group_t)0, txFifo, rxFifo);
+}
+
+/*!
+ * @brief Update watermark for RX buffer.
+ *
+ * @code
+ * Set watermark as 4 bytes:
+ * XSPI_UpdateRxBufferWaterMark(XSPI0, 4UL);
+ * Set watermark as 8 bytes:
+ * XSPI_UpdateRxBufferWaterMark(XSPI0, 8UL);
+ * @endcode
+ *
+ *
+ * @param[in] base XSPI peripheral base address.
+ * @param[in] waterMark Specify the number of bytes in the RX buffer which causes XSPI to assert the watermark exceeded
+ * flag, should be in multiple of 4 bytes.
+ *
+ * @retval kStatus_XSPI_IPAccessAsserted Fail to update watermark for Rx buffer, due to IP access is asserted.
+ * @retval kStatus_XSPI_WaterMarkIllegal Fail to update watermark for Tx buffer, due to input watermark is not the
+ * multiple of 4 bytes.
+ * @retval kStatus_Success Successful to update watermark.
+ */
+RAMFUNC static inline status_t XSPI_UpdateRxBufferWaterMark(XSPI_Type *base, uint32_t waterMark)
+{
+    return XSPI_UpdateRxBufferWaterMarkTG(base, (xspi_target_group_t)0, waterMark);
+}
+
+/*!
+ * @brief Update watermark for TX buffer.
+ *
+ * @param[in] base XSPI peripheral base address.
+ * @param[in] waterMark The watermark to set.
+ * @return Status of the operation.
+ */
+RAMFUNC static inline status_t XSPI_UpdateTxBufferWaterMark(XSPI_Type *base, uint32_t waterMark)
+{
+    return XSPI_UpdateTxBufferWaterMarkTG(base, (xspi_target_group_t)0, waterMark);
+}
+
+/*!
+ * @brief Unlock IP access arbitration.
+ *
+ * @param[in] base XSPI peripheral base address.
+ */
+RAMFUNC static inline void XSPI_UnlockIpAccessArbitration(XSPI_Type *base)
+{
+    XSPI_UnlockIpAccessArbitrationTG(base, (xspi_target_group_t)0);
+}
+
+/*!
+ * @brief Check and clear IP command execution errors.
+ *
+ * @param base XSPI peripheral base address.
+ * @param status Interrupt status.
+ * @return Status of the operation.
+ */
+RAMFUNC static inline status_t XSPI_CheckAndClearError(XSPI_Type *base, uint32_t status)
+{
+    return XSPI_CheckAndClearErrorTG(base, (xspi_target_group_t)0, status);
+}
+
+/*!
+ * @brief Writes data into IPS TX Buffer.
+ *
+ * @param[in] base XSPI peripheral base address.
+ * @param[in] data The data bytes to send.
+ */
+RAMFUNC static inline void XSPI_WriteTxBuffer(XSPI_Type *base, uint32_t data)
+{
+    XSPI_WriteTxBufferTG(base, (xspi_target_group_t)0, data);
+}
+
+/*!
+ * @brief Receive data from IPX RX FIFO.
+ *
+ * @param[in] base XSPI peripheral base address.
+ * @param[in] fifoIndex Source fifo index.
+ * @return The data in the FIFO.
+ */
+RAMFUNC static inline uint32_t XSPI_ReadRxBuffer(XSPI_Type *base, uint8_t fifoIndex)
+{
+    return XSPI_ReadRxBufferTG(base, (xspi_target_group_t)0, fifoIndex);
+}
+
+/*!
+ * @brief Trigger a pop event for RX buffer.
+ *
+ * @param[in] base XSPI peripheral base address.
+ */
+RAMFUNC static inline void XSPI_TriggerRxBufferPopEvent(XSPI_Type *base)
+{
+    XSPI_TriggerRxBufferPopEventTG(base, (xspi_target_group_t)0);
+}
+
+/*!
+ * @brief Check if RX buffer watermark is exceeded.
+ *
+ * @param[in] base XSPI peripheral base address.
+ * @retval true The RX buffer watermark has been exceeded.
+ * @retval false The RX buffer watermark has not been exceeded.
+ */
+RAMFUNC static inline bool XSPI_CheckRxBufferWaterMarkExceed(XSPI_Type *base)
+{
+    return XSPI_CheckRxBufferWaterMarkExceedTG(base, (xspi_target_group_t)0);
+}
+
+/*!
+ * @brief Get RX buffer available bytes count.
+ *
+ * @param[in] base XSPI peripheral base address.
+ * @return The available counts of bytes in RX buffer.
+ */
+RAMFUNC static inline uint32_t XSPI_GetRxBufferAvailableBytesCount(XSPI_Type *base)
+{
+    return XSPI_GetRxBufferAvailableBytesCountTG(base, (xspi_target_group_t)0);
+}
+
+/*!
+ * @brief Get counts of bytes already removed from RX buffer.
+ *
+ * @param[in] base XSPI peripheral base address.
+ * @return Counts of removed bytes.
+ */
+RAMFUNC static inline uint32_t XSPI_GetRxBufferRemovedBytesCount(XSPI_Type *base)
+{
+    return XSPI_GetRxBufferRemovedBytesCountTG(base, (xspi_target_group_t)0);
+}
+
+/*!
+ * @brief Check if IP access is granted by XSPI arbitration.
+ *
+ * @deprecated Use #XSPI_CheckIpRequestGranted() as instead
+ * @param base XSPI peripheral base address.
+ *
+ * @retval true The IP access is granted arbitration.
+ * @retval false No IP access is queued.
+ */
+RAMFUNC static inline bool XSPI_CheckIPAccessGranted(XSPI_Type *base)
+{
+    return (bool)((base->FSMSTAT & XSPI_FSMSTAT_VLD_MASK) != 0UL);
+}
+
+/*!
+ * @brief Check if IP write access is triggered.
+ *
+ * @param[in] base XSPI peripheral base address.
+ * @retval true The IP write access is granted arbitration.
+ * @retval false No IP write access is queued.
+ */
+RAMFUNC static inline bool XSPI_CheckIpWriteTriggered(XSPI_Type *base)
+{
+    return XSPI_CheckIpWriteTriggeredTG(base, (xspi_target_group_t)0);
+}
+
+/*!
+ * @brief Check if IP read access is triggered.
+ *
+ * @param[in] base XSPI peripheral base address.
+ * @retval true The IP read access is granted arbitration.
+ * @retval false No IP read access is queued.
+ */
+RAMFUNC static inline bool XSPI_CheckIpReadTriggered(XSPI_Type *base)
+{
+    return XSPI_CheckIpReadTriggeredTG(base, (xspi_target_group_t)0);
+}
+
+/*!
+ * @brief Check if IPS transfer is granted arbitration or execution.
+ *
+ * @param[in] base XSPI peripheral base address.
+ * @retval true Valid, the IPS transfer is granted.
+ * @retval false Not valid, no IPS transfer is queued.
+ */
+RAMFUNC static inline bool XSPI_CheckFSMValid(XSPI_Type *base)
+{
+    return XSPI_CheckFSMValidTG(base, (xspi_target_group_t)0);
+}
+
+/*!
+ * @brief Check if IP manager can write to TX buffer.
+ *
+ * @param[in] base XSPI peripheral base address.
+ * @retval true TX buffer lock is open.
+ * @retval false TX buffer lock is not open.
+ */
+RAMFUNC static inline bool XSPI_CheckTxBuffLockOpen(XSPI_Type *base)
+{
+    return XSPI_CheckTxBuffLockOpenTG(base, (xspi_target_group_t)0);
+}
+
+/*!
+ * @brief Enables the XSPI interrupts.
+ *
+ * @param base XSPI peripheral base address.
+ * @param mask XSPI interrupt source mask.
+ */
+RAMFUNC static inline void XSPI_EnableInterrupts(XSPI_Type *base, uint64_t mask)
+{
+    XSPI_EnableInterruptsTG(base, (xspi_target_group_t)0, mask);
+}
+
+/*!
+ * @brief Disables the XSPI interrupts.
+ *
+ * @param base XSPI peripheral base address.
+ * @param mask XSPI interrupt source mask.
+ */
+RAMFUNC static inline void XSPI_DisableInterrupts(XSPI_Type *base, uint64_t mask)
+{
+    XSPI_DisableInterruptsTG(base, (xspi_target_group_t)0, mask);
+}
+
+/*!
+ * @brief Set exclusive access lock mode for the specific FRAD.
+ *
+ * @param[in] base XSPI peripheral base address.
+ * @param[in] ealMode Specify the exclusive access lock mode.
+ * @param[in] fradId Specify the FRAD.
+ */
+RAMFUNC static inline void XSPI_SetSFPFradEALMode(XSPI_Type *base,
+                                                  xspi_exclusive_access_lock_mode_t ealMode,
+                                                  uint8_t fradId)
+{
+    XSPI_SetSFPFradEALModeTG(base, (xspi_target_group_t)0, ealMode, fradId);
+}
+
+/*!
+ * @brief Sends a buffer of data bytes using blocking method.
+ *
+ * @param base XSPI peripheral base address.
+ * @param buffer The data bytes to send.
+ * @param size The number of data bytes to send.
+ * @return Status of the operation.
+ */
+RAMFUNC static inline status_t XSPI_WriteBlocking(XSPI_Type *base, uint8_t *buffer, size_t size)
+{
+    return XSPI_WriteBlockingTG(base, (xspi_target_group_t)0, buffer, size);
+}
+
+/*!
+ * @brief Receives a buffer of data bytes using a blocking method.
+ *
+ * @param base XSPI peripheral base address.
+ * @param buffer The data bytes to receive.
+ * @param size The number of data bytes to receive.
+ * @return Status of the operation.
+ */
+RAMFUNC static inline status_t XSPI_ReadBlocking(XSPI_Type *base, uint8_t *buffer, size_t size)
+{
+    return XSPI_ReadBlockingTG(base, (xspi_target_group_t)0, buffer, size);
+}
 
 /*! @} */
 
