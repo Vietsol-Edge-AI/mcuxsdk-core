@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2015, Freescale Semiconductor, Inc.
- * Copyright 2016-2022, 2024-2025 NXP
+ * Copyright 2016-2022, 2024-2026 NXP
  * All rights reserved.
  *
  * SPDX-License-Identifier: BSD-3-Clause
@@ -872,46 +872,44 @@ status_t LPI2C_MasterStop(LPI2C_Type *base)
 {
     /* Wait until there is room in the fifo. */
     status_t result = LPI2C_MasterWaitForTxReady(base);
-    if (kStatus_Success == result)
+
+    /* Send the STOP signal */
+    base->MTDR = (uint32_t)kStopCmd;
+
+    /* Wait for the stop detected flag to set, indicating the transfer has completed on the bus. */
+    /* Also check for errors while waiting. */
+#if I2C_RETRY_TIMES != 0U
+    uint32_t waitTimes = I2C_RETRY_TIMES;
+#endif
+
+#if I2C_RETRY_TIMES != 0U
+    while ((result == kStatus_Success) && (0U != waitTimes))
     {
-        /* Send the STOP signal */
-        base->MTDR = (uint32_t)kStopCmd;
-
-        /* Wait for the stop detected flag to set, indicating the transfer has completed on the bus. */
-        /* Also check for errors while waiting. */
-#if I2C_RETRY_TIMES != 0U
-        uint32_t waitTimes = I2C_RETRY_TIMES;
-#endif
-
-#if I2C_RETRY_TIMES != 0U
-        while ((result == kStatus_Success) && (0U != waitTimes))
-        {
-            waitTimes--;
+        waitTimes--;
 #else
-        while (result == kStatus_Success)
-        {
+    while (result == kStatus_Success)
+    {
 #endif
-            uint32_t status = LPI2C_MasterGetStatusFlags(base);
+        uint32_t status = LPI2C_MasterGetStatusFlags(base);
 
-            /* Check for error flags. */
-            result = LPI2C_MasterCheckAndClearError(base, status);
+        /* Check for error flags. */
+        result = LPI2C_MasterCheckAndClearError(base, status);
 
-            /* Check if the stop was sent successfully. */
-            if ((0U != (status & (uint32_t)kLPI2C_MasterStopDetectFlag)) &&
-                (0U != (status & (uint32_t)kLPI2C_MasterTxReadyFlag)))
-            {
-                LPI2C_MasterClearStatusFlags(base, (uint32_t)kLPI2C_MasterStopDetectFlag);
-                break;
-            }
+        /* Check if the stop was sent successfully. */
+        if ((0U != (status & (uint32_t)kLPI2C_MasterStopDetectFlag)) &&
+            (0U != (status & (uint32_t)kLPI2C_MasterTxReadyFlag)))
+        {
+            LPI2C_MasterClearStatusFlags(base, (uint32_t)kLPI2C_MasterStopDetectFlag);
+            break;
         }
+    }
 
 #if I2C_RETRY_TIMES != 0U
-        if (0U == waitTimes)
-        {
-            result = kStatus_LPI2C_Timeout;
-        }
-#endif
+    if (0U == waitTimes)
+    {
+        result = kStatus_LPI2C_Timeout;
     }
+#endif
 
     return result;
 }
@@ -1168,25 +1166,16 @@ status_t LPI2C_MasterTransferBlocking(LPI2C_Type *base, lpi2c_master_transfer_t 
             {
                 result = LPI2C_MasterReceive(base, transfer->data, transfer->dataSize);
             }
-            /*
-             * $Branch Coverage Justification$
-             * Errors cannot be simulated by software during transmission.(will improve)
-             */
-            if (kStatus_Success == result) /* GCOVR_EXCL_BR_LINE */
-            {
-                if ((transfer->flags & (uint32_t)kLPI2C_TransferNoStopFlag) == 0U)
-                {
-                    result = LPI2C_MasterStop(base);
-                }
-            }
         }
 
-        /* Transmit fail */
-        if (kStatus_Success != result)
+        if ((transfer->flags & (uint32_t)kLPI2C_TransferNoStopFlag) == 0U)
         {
-            if ((transfer->flags & (uint32_t)kLPI2C_TransferNoStopFlag) == 0U)
+            /* Send STOP */
+            status_t stopResult = LPI2C_MasterStop(base);
+
+            if (kStatus_Success == result)
             {
-                (void)LPI2C_MasterStop(base);
+                result = stopResult;
             }
         }
     }
