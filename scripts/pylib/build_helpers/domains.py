@@ -44,6 +44,9 @@ mapping:
           source_dir:
             required: false
             type: str
+          core_id:
+            required: false
+            type: str
   flash_order:
     required: false
     type: seq
