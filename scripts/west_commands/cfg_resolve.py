@@ -1,4 +1,4 @@
-# Copyright 2025 NXP
+# Copyright 2025-2026 NXP
 #
 # SPDX-License-Identifier: BSD-3-Clause
 
@@ -173,6 +173,7 @@ class CfgResolve(WestCommand):
         else:
             log.wrn("No .cmake file found! Creating new file.")
             try:
+                os.makedirs(os.path.dirname(cmake_path), exist_ok=True) # ensure directory exists
                 open(cmake_path, 'a').close()
                 return cmake_path
             except IOError as e:
