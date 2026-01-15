@@ -59,7 +59,7 @@ mapping:
     type: map
     allowempty: False
     mapping:
-      regex;(\S+):
+      =:
         type: str
         required: true
 '''
