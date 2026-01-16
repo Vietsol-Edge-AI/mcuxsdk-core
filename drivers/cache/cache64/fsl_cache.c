@@ -99,7 +99,7 @@ uint32_t CACHE64_GetInstanceByAddr(uint32_t address)
         g_cache64MemPhyAliasId = 0U;
         while(g_cache64MemPhyAliasId < CACHE64_PHYMEM_COLUM_COUNT)
         {
-            if ((MSDK_REG_SECURE_ADDR(address) >= MSDK_REG_SECURE_ADDR(phyMemBase[i][g_cache64MemPhyAliasId])) && (MSDK_REG_SECURE_ADDR(address) < MSDK_REG_SECURE_ADDR(phyMemBase[i][g_cache64MemPhyAliasId] + phyMemSize[i][g_cache64MemPhyAliasId] - 0x01U)))
+            if ((MSDK_REG_SECURE_ADDR(address) >= MSDK_REG_SECURE_ADDR(phyMemBase[i][g_cache64MemPhyAliasId])) && (MSDK_REG_SECURE_ADDR(address) < MSDK_REG_SECURE_ADDR(phyMemBase[i][g_cache64MemPhyAliasId] + phyMemSize[i][g_cache64MemPhyAliasId])))
             {
                 return i;
             }

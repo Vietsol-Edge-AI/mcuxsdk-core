@@ -21,7 +21,7 @@
 /*! @name Driver version */
 /*! @{ */
 /*! @brief cache driver version. */
-#define FSL_LLC_DRIVER_VERSION (MAKE_VERSION(2, 0, 0))
+#define FSL_LLC_DRIVER_VERSION (MAKE_VERSION(2, 0, 1))
 /*! @} */
 
 /* Helper: memory barrier order for cache control changes (DSB then ISB) */

@@ -1,5 +1,10 @@
 # CACHE XCACHE
 
+## [2.0.5]
+
+- Bug Fixes
+  - Fixed boundary check in XCACHE_GetInstanceByAddr() to correctly include the last address of the memory range.
+
 ## [2.0.4]
 
 - Improvements

@@ -1,5 +1,10 @@
 # CACHE64
 
+## [2.0.14]
+
+- Bug Fixes
+  - Fixed boundary check in CACHE64_GetInstanceByAddr() to correctly include the last address of the memory range.
+
 ## [2.0.13]
 
 - Bug Fixes

@@ -162,7 +162,7 @@ uint32_t LLC_GetInstanceByAddr(uint32_t address)
         {
             if ((MSDK_REG_SECURE_ADDR(address) >= MSDK_REG_SECURE_ADDR(phyMemBase[i][g_llcMemPhyAliasId])) &&
                 (MSDK_REG_SECURE_ADDR(address) <
-                 MSDK_REG_SECURE_ADDR(phyMemBase[i][g_llcMemPhyAliasId] + phyMemSize[i][g_llcMemPhyAliasId] - 0x01U)))
+                 MSDK_REG_SECURE_ADDR(phyMemBase[i][g_llcMemPhyAliasId] + phyMemSize[i][g_llcMemPhyAliasId])))
             {
                 return i;
             }
