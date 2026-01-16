@@ -56,7 +56,7 @@ class CfgResolve(WestCommand):
     
         parser.add_argument('-b', '--board', help='board for which to create the project info file')
         parser.add_argument('source_dir', help="source directory for project")
-        parser.add_argument('-D', action='append', dest='cmake_defines', help="CMake defines in format key=value (e.g., -Dcore_id=cm33)")
+        parser.add_argument('-D', action='append', dest='cmake_defines', help="CMake defines in format key=value (e.g., -Dcore_id=cm33). Ensure that they are the same as for the build.")
 
         parser.add_argument('--no_prj_update', action='store_true', help='Disable call of cfg_project_info to update project_info.json with newly changed data')
         parser.add_argument('--no_src_add', action='store_true', help='Disable adding of source files into project configuration during resolve')
@@ -173,7 +173,9 @@ class CfgResolve(WestCommand):
         else:
             log.wrn("No .cmake file found! Creating new file.")
             try:
-                os.makedirs(os.path.dirname(cmake_path), exist_ok=True) # ensure directory exists
+                if not os.path.exists(os.path.dirname(cmake_path)):
+                    log.wrn(f"Directory for .cmake file missing. Creating directory: {os.path.dirname(cmake_path)}")
+                    os.makedirs(os.path.dirname(cmake_path), exist_ok=True) # ensure directory exists
                 open(cmake_path, 'a').close()
                 return cmake_path
             except IOError as e:

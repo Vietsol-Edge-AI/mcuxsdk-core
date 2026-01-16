@@ -53,7 +53,7 @@ class ProjectInfo(WestCommand):
         
         parser.add_argument('-b', '--board', help='board for which to create the project info file')
         parser.add_argument('source_dir', help="source directory for project")
-        parser.add_argument('-D', action='append', dest='cmake_defines', help="CMake defines in format key=value (e.g., -Dcore_id=cm33)")
+        parser.add_argument('-D', action='append', dest='cmake_defines', help="CMake defines in format key=value (e.g., -Dcore_id=cm33). Ensure that they are the same as for the build.")
         parser.add_argument("--no_tmp_delete", action="store_true", help="Disables deletion of temporary build file. Used for debugging")
 
         return parser
