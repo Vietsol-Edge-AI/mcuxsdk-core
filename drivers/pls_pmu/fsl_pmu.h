@@ -1,5 +1,5 @@
 /*
- * Copyright 2025 NXP
+ * Copyright 2025-2026 NXP
  *
  * All rights reserved.
  * SPDX-License-Identifier: BSD-3-Clause
@@ -26,8 +26,8 @@
 
 /*! @name Driver version */
 /*@{*/
-/*! @brief pls_pmu driver version 2.0.1. */
-#define FSL_PMU_DRIVER_VERSION (MAKE_VERSION(2, 0, 1))
+/*! @brief pls_pmu driver version 2.1.0. */
+#define FSL_PMU_DRIVER_VERSION (MAKE_VERSION(2, 1, 0))
 /*@}*/
 
 /*!
@@ -184,6 +184,44 @@ static inline void PMU_UpdateWakeupTime(PMU_Type *base, uint16_t wakeupTime)
 static inline uint32_t PMU_GetWakeupTime(PMU_Type *base)
 {
     return (base->AWK_UP_TIME);
+}
+
+/*!
+ * @brief Update PMU_TRIM4 HVD_LV_TRIM bitfield.
+ *
+ * This function writes the HVD (High Voltage Detect) low voltage trim value to PMU_TRIM4 register.
+ * The trim value should be obtained from IFR1 (Information Flash Region 1) by the caller.
+ * This function is typically used during CLOCK mode configuration (standard/mid drive strength).
+ *
+ * @param base PMU peripheral base address.
+ * @param value HVD low voltage trim value to write (4-bit value, 0x0-0xF).
+ *
+ * @note This function uses read-modify-write operation to preserve other bitfields in PMU_TRIM4.
+ * @note The caller is responsible for reading the trim value from IFR1.
+ */
+static inline void PMU_UpdateHvdLvTrim(PMU_Type *base, uint8_t value)
+{
+    base->PMU_TRIM4 = ((base->PMU_TRIM4) & ~PMU_PMU_TRIM4_HVD_LV_TRIM_MASK) | \
+                      PMU_PMU_TRIM4_HVD_LV_TRIM(value);
+}
+
+/*!
+ * @brief Update PMU_TRIM4 LVD_LV_TRIM bitfield.
+ *
+ * This function writes the LVD (Low Voltage Detect) low voltage trim value to PMU_TRIM4 register.
+ * The trim value should be obtained from IFR1 (Information Flash Region 1) by the caller.
+ * This function is typically used during CLOCK mode configuration (standard/mid drive strength).
+ *
+ * @param base PMU peripheral base address.
+ * @param value LVD low voltage trim value to write (4-bit value, 0x0-0xF).
+ *
+ * @note This function uses read-modify-write operation to preserve other bitfields in PMU_TRIM4.
+ * @note The caller is responsible for reading the trim value from IFR1.
+ */
+static inline void PMU_UpdateLvdLvTrim(PMU_Type *base, uint8_t value)
+{
+    base->PMU_TRIM4 = ((base->PMU_TRIM4) & ~PMU_PMU_TRIM4_LVD_LV_TRIM_MASK) | \
+                      PMU_PMU_TRIM4_LVD_LV_TRIM(value);
 }
 
 #if defined(__cplusplus)
