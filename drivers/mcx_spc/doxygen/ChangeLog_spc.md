@@ -1,5 +1,10 @@
 # MCX_SPC
 
+## [2.10.1]
+
+- Improvements
+  - Add support for some platform does not has Trim for SRAMRETLDO.
+
 ## [2.10.0]
 
 - New Features

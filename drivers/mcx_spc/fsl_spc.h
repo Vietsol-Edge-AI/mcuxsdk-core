@@ -19,8 +19,8 @@
 
 /*! @name Driver version */
 /*! @{ */
-/*! @brief SPC driver version 2.10.0. */
-#define FSL_SPC_DRIVER_VERSION (MAKE_VERSION(2, 10, 0))
+/*! @brief SPC driver version 2.10.1. */
+#define FSL_SPC_DRIVER_VERSION (MAKE_VERSION(2, 10, 1))
 /*! @} */
 
 #define SPC_EVD_CFG_REG_EVDISO_SHIFT   0UL
@@ -670,6 +670,7 @@ static inline void SPC_ClearPowerDomainLowPowerRequestFlag(SPC_Type *base, spc_p
  * @{
  */
 
+#ifdef SPC_SRAMRETLDO_REFTRIM_REFTRIM_MASK
 /*!
  * @brief Trims SRAM retention regulator reference voltage, trim step is 12 mV, range is around 0.48V to 0.85V.
  *
@@ -681,6 +682,7 @@ static inline void SPC_TrimSRAMLdoRefVoltage(SPC_Type *base, uint8_t trimValue)
     base->SRAMRETLDO_REFTRIM =
         ((base->SRAMRETLDO_REFTRIM & ~SPC_SRAMRETLDO_REFTRIM_REFTRIM_MASK) | SPC_SRAMRETLDO_REFTRIM_REFTRIM(trimValue));
 }
+#endif
 
 /*!
  * @brief Enables/disables SRAM retention LDO.
