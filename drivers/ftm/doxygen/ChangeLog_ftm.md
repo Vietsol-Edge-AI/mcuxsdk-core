@@ -1,5 +1,10 @@
 # FTM
 
+## [2.7.5]
+
+- Bug Fixes
+  - Corrected the bit shift calculation for fault input filter enable in FTM_SetupFaultInput().
+
 ## [2.7.4]
 
 - Bug Fixes
