@@ -1,5 +1,10 @@
 # CACHE XCACHE
 
+## [2.0.6]
+
+- Improvements
+  - Add assert in XCACHE_GetInstanceByAddr() to check out-of-range address.
+
 ## [2.0.5]
 
 - Bug Fixes
