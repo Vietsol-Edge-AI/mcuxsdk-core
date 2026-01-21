@@ -50,7 +50,7 @@ uint32_t XCACHE_GetInstanceByAddr(uint32_t address)
     for (i = 0; i < ARRAY_SIZE(s_xcachectrlBases); i++)
     {
         if ((address >= s_xcachePhymemBases[i]) &&
-            (address < (s_xcachePhymemBases[i] + s_xcachePhymemSizes[i])))
+            ((address - s_xcachePhymemBases[i]) < s_xcachePhymemSizes[i]))
         {
             break;
         }

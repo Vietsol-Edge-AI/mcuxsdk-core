@@ -161,8 +161,8 @@ uint32_t LLC_GetInstanceByAddr(uint32_t address)
         while (g_llcMemPhyAliasId < LLC_PHYMEM_COLUMN_COUNT)
         {
             if ((MSDK_REG_SECURE_ADDR(address) >= MSDK_REG_SECURE_ADDR(phyMemBase[i][g_llcMemPhyAliasId])) &&
-                (MSDK_REG_SECURE_ADDR(address) <
-                 MSDK_REG_SECURE_ADDR(phyMemBase[i][g_llcMemPhyAliasId] + phyMemSize[i][g_llcMemPhyAliasId])))
+                ((MSDK_REG_SECURE_ADDR(address) - MSDK_REG_SECURE_ADDR(phyMemBase[i][g_llcMemPhyAliasId])) <
+                 phyMemSize[i][g_llcMemPhyAliasId]))
             {
                 return i;
             }
