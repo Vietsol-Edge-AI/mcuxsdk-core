@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2025 NXP
+ * Copyright 2022-2026 NXP
  *
  * SPDX-License-Identifier: BSD-3-Clause
  */
@@ -496,14 +496,22 @@ static void ENET_SetPtp1588(ENET_Type *base, const enet_config_t *config, uint32
     /* Initialize the sub-second increment register. */
     if (ptpConfig->tsRollover != kENET_BinaryRollover)
     {
+#ifdef ENET_MAC_SUB_SECOND_INCREMENT_SNSINC_MASK
         base->MAC_SUB_SECOND_INCREMENT = ENET_MAC_SUB_SECOND_INCREMENT_SNSINC(ENET_NANOSECS_ONESECOND / ptpClkHz);
+#else
+        base->MAC_SUB_SECOND_INCREMENT = ENET_MAC_SUB_SECOND_INCREMENT_SSINC(ENET_NANOSECS_ONESECOND / ptpClkHz);
+#endif
         base->MAC_SYSTEM_TIME_NANOSECONDS_UPDATE = 0;
     }
     else
     {
         /* Round up. */
-        uint32_t data                            = ENET_MAC_SYSTEM_TIME_NANOSECONDS_TSSS_MASK / ptpClkHz;
-        base->MAC_SUB_SECOND_INCREMENT           = ENET_MAC_SUB_SECOND_INCREMENT_SNSINC(data);
+        uint32_t data = ENET_MAC_SYSTEM_TIME_NANOSECONDS_TSSS_MASK / ptpClkHz;
+#ifdef ENET_MAC_SUB_SECOND_INCREMENT_SNSINC_MASK
+        base->MAC_SUB_SECOND_INCREMENT = ENET_MAC_SUB_SECOND_INCREMENT_SNSINC(data);
+#else
+        base->MAC_SUB_SECOND_INCREMENT = ENET_MAC_SUB_SECOND_INCREMENT_SSINC(data);
+#endif
         base->MAC_SYSTEM_TIME_NANOSECONDS_UPDATE = 0;
     }
     /* Set the second.*/
