@@ -1,5 +1,5 @@
 /*
- * Copyright 2025 NXP
+ * Copyright 2025-2026 NXP
  *
  * SPDX-License-Identifier: BSD-3-Clause
  */
@@ -158,8 +158,25 @@ status_t TENBASET_PHY_Init(TENBASET_PHY_Type *base, const tenbaset_phy_config_t 
     /* Store the handle */
     s_tenbaset_phyHandles[TENBASET_PHY_GetIndex(base)] = handle;
 
-    /* Perform software reset */
-    status = TENBASET_PHY_SoftwareReset(base);
+    if (TENBASET_PHY_GetModeStatus(base) != kTENBASET_PHY_StatusLinkDown)
+    {
+        /* Perform software reset */
+        status = TENBASET_PHY_SoftwareReset(base);
+        if (status != kStatus_Success)
+        {
+            return status;
+        }
+
+        status =
+            TENBASET_PHY_WaitForModeTransition(base, kTENBASET_PHY_StatusLinkDown, CONFIG_TENBASET_PHY_MODE_TIMEOUT);
+        if (status != kStatus_Success)
+        {
+            return status;
+        }
+    }
+
+    /* Go to link up state already, otherwise subsystems like PLCA will stay in reset */
+    status = TENBASET_PHY_SetMode(base, kTENBASET_PHY_ModeLinkUp);
     if (status != kStatus_Success)
     {
         return status;
@@ -178,13 +195,6 @@ status_t TENBASET_PHY_Init(TENBASET_PHY_Type *base, const tenbaset_phy_config_t 
     /* Enable only specified interrupts (if any) */
     TENBASET_PHY_DisableInterrupts(base, 0xFFFFU);
     TENBASET_PHY_EnableInterrupts(base, config->interruptMask);
-
-    /* Go to link up state */
-    status = TENBASET_PHY_SetMode(base, kTENBASET_PHY_ModeLinkUp);
-    if (status != kStatus_Success)
-    {
-        return status;
-    }
 
     /* Mark as initialized */
     handle->initialized = true;
