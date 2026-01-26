@@ -1,5 +1,6 @@
 /*
  * Copyright 2025-2026 NXP
+ * Copyright 2025-2026 NXP
  *
  * All rights reserved.
  * SPDX-License-Identifier: BSD-3-Clause
@@ -123,12 +124,14 @@ static inline void PMU_UpdateVDDCore1P1InLpMode(PMU_Type *base, uint8_t value)
  */
 static inline void PMU_EnableFRO16K(PMU_Type *base, bool enable)
 {
-    if (enable)
+    if (enable == false)
     {
+        /* Disable FRO16K clock. */
         base->FRO_CTRL |= PMU_FRO_CTRL_FRO16K_EN_MASK;
     }
     else
     {
+        /* Enable FRO16K clock. */
         base->FRO_CTRL &= ~PMU_FRO_CTRL_FRO16K_EN_MASK;
     }
 }
