@@ -1,5 +1,5 @@
 /*
- * Copyright 2023-2025 NXP
+ * Copyright 2023-2026 NXP
  * All rights reserved.
  *
  * SPDX-License-Identifier: BSD-3-Clause
@@ -164,6 +164,19 @@ status_t GDET_IsolateOn(GDET_Type *base)
             return kStatus_Fail;
         }
     }
+#elif defined(SECCON_GDETX_CTRL_GDET_CTRL_GDET_ISO_SW_MASK) || defined(SECCON_GDETX_CTRL_GDET_CTRL_GDET_ISO_SW_MASK)
+    /* GDET0 */
+    if (instance == 0u)
+    {
+        syscon_tmp = SECCON->GDET_CTRL[0u] & ~(SYSCON_GDET_ISOLATION_SW_MASK);
+        syscon_tmp |= ISOLATE_ON;
+        SECCON->GDET_CTRL[0u] = syscon_tmp;
+
+        if ((SECCON->GDET_CTRL[0u] & SYSCON_GDET_ISOLATION_SW_MASK) != ISOLATE_ON)
+        {
+            return kStatus_Fail;
+        }
+    }
 #elif defined(SYSCON3_GDET_CTRL_GDET_ISO_SW_MASK)
     /* GDET3*/
     if (instance == 3u)
@@ -209,6 +222,18 @@ status_t GDET_IsolateOff(GDET_Type *base)
         SYSCON0->GDET_CTRL[0u] = syscon_tmp;
 
         if ((SYSCON0->GDET_CTRL[0u] & SYSCON_GDET_ISOLATION_SW_MASK) != ISOLATE_OFF)
+        {
+            return kStatus_Fail;
+        }
+    }
+#elif defined(SECCON_GDETX_CTRL_GDET_CTRL_GDET_ISO_SW_MASK) || defined(SECCON_GDETX_CTRL_GDET_CTRL_GDET_ISO_SW_MASK)
+    if (instance == 0u)
+    {
+        syscon_tmp = SECCON->GDET_CTRL[0u] & ~(SYSCON_GDET_ISOLATION_SW_MASK);
+        syscon_tmp |= ISOLATE_OFF;
+        SECCON->GDET_CTRL[0u] = syscon_tmp;
+
+        if ((SECCON->GDET_CTRL[0u] & SYSCON_GDET_ISOLATION_SW_MASK) != ISOLATE_OFF)
         {
             return kStatus_Fail;
         }
