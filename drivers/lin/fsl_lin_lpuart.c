@@ -89,6 +89,11 @@
  * The measurement overflow can only happen when the registered function uses a timer
  * whose counter's clock source is not set properly, and the autobaud sequence the LIN
  * master send uses an invalid baudrate.
+ *
+ * $Justification lin_lpuart_c_ref_16$
+ * When in idle state, the wakeup signal shall be in range of 150us to 5ms, signal shorter
+ * than 150us or longer than 5ms is not a valid wakeup signal and will be ignored. Sometimes
+ * the auto test run may not cover the border condition.
  */
 
 /*******************************************************************************
@@ -447,8 +452,10 @@ static void LIN_LPUART_CheckWakeupSignal(uint32_t instance)
         (void)linUserConfig->timerGetTimeIntervalCallback(&wakeupSignalLength);
 
         /* If length of the dominant signal is from 150us to 5ms, it is a wakeup signal */
+        /* $Branch Coverage Justification$ $ref lin_lpuart_c_ref_15$ */
         if (wakeupSignalLength >= 150000U)
         {
+            /* $Branch Coverage Justification$ $ref lin_lpuart_c_ref_15$ */
             if (wakeupSignalLength <= 5000000U)
             {
                 linCurrentState->currentEventId = LIN_WAKEUP_SIGNAL;
