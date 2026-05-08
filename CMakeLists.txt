@@ -6,7 +6,10 @@
 mcux_add_cmakelists(${SdkRootDirPath}/${device_root}/${soc_portfolio}/${soc_series}/${device})
 
 # Load board CMakeLists.txt
-mcux_add_cmakelists(${SdkRootDirPath}/examples/ OPTIONAL)
+mcux_add_cmakelists(${CUSTOM_BOARD_ROOT}/${board} OPTIONAL)
+if(DEFINED CUSTOM_BOARD_ROOT AND EXISTS ${CUSTOM_BOARD_ROOT}/_common/project_segments/common/prjseg.cmake)
+    include(${CUSTOM_BOARD_ROOT}/_common/project_segments/common/prjseg.cmake)
+endif()
 
 # Load all drivers
 mcux_load_all_cmakelists_in_directory(${SdkRootDirPath}/drivers)

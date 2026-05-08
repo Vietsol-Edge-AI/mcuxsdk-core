@@ -3,7 +3,11 @@
 # SPDX-License-Identifier: BSD-3-Clause
 
 # board
-rsource "examples/Kconfig"
+osource "${CUSTOM_BOARD_ROOT}/${board}/Kconfig"
+orsource "${CUSTOM_BOARD_ROOT}/_common/Kconfig.interfaces"
+menu "Project Segments"
+orsource "${CUSTOM_BOARD_ROOT}/_common/project_segments/common/Kconfig.prjseg"
+endmenu
 
 # device
 rsource "devices/Kconfig"
