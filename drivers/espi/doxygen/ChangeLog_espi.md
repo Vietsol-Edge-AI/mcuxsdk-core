@@ -1,4 +1,4 @@
-# SPI_FILTER
+# ESPI
 
 ## [2.0.0]
 
